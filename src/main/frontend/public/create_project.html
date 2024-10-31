@@ -23,9 +23,10 @@
         <input type="file" name="folder" multiple webkitdirectory/>
         <<button type="submit" class="btn btn-dark">제출</button>
     </form>
-</div>
+</div>6
+
 <div>
-    <th:block th:if="${message}"> <!--thymeleaf의 블록 요소로, message 변수를 전달 받은 경우(model.c 파일이 없는 경우)에만 이 블록 렌더링-->
+    <th:block t6h:if="${message}"> <!--thymeleaf의 블록 요소로, message 변수를 전달 받은 경우(model.c 파일이 없는 경우)에만 이 블록 렌더링-->
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
             <strong>Warning!</strong> [[${message}]]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
