@@ -14,6 +14,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
+                .requestMatchers("/ws/**").permitAll()  //웹소켓 연결 차단되지 않도록 보안 예외
                 .anyRequest().permitAll()  // 모든 요청에 대해 인증 없이 허용
                 .and()
                 .csrf().disable();          // CSRF 보호 비활성화 (필요한 경우)
