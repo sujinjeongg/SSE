@@ -10,13 +10,17 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    //WebSocketHandler를 주입받아 사용
-    @Autowired
-    private WebSocketHandler webSocketHandler;
+    private final WebSocketHandler webSocketHandler;
 
-    // 웹소켓 핸들러 등록.
+    @Autowired
+    public WebSocketConfig(WebSocketHandler webSocketHandler) {
+        this.webSocketHandler = webSocketHandler;
+    }
+
+    // 웹소켓 핸들러 등록
     @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry reg) {
-        reg.addHandler(new WebSocketHandler(), "/ws").setAllowedOrigins("*");
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(webSocketHandler, "/folder")
+                .setAllowedOrigins("*");
     }
 }
