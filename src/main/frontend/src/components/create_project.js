@@ -6,6 +6,13 @@ import 'mdb-ui-kit/css/mdb.min.css';
 function CreateProject() {
     const [uploadStatus, setUploadStatus] = useState("폴더 업로드 준비중...")
     const [folderPath, setFolderPath] = useState("");
+    const [selectedOption, setSelectedOption] = useState('');
+    const [directory, setDirectory] = useState('');
+    const [path, setPath] = useState('');
+    const [maxmutants, setMaxmutants] = useState('');
+    const [filename, setFilename] = useState('');
+    const [line, setLine] = useState('');
+    const [notmutated, setNotmutated] = useState('');
 
     useEffect(() => {
         if (!folderPath) return; // 폴더 경로가 설정되지 않은 경우 실행하지 않음
@@ -40,6 +47,12 @@ function CreateProject() {
         };
     }, [folderPath]);
 
+    const handleOptionChange = (e) => {
+        const value = e.target.value;
+        setSelectedOption((prev) =>
+        prev.includes(value) ? prev.filter((opt) => opt !==value) : [...prev, value]);
+    };
+
     return (
         <div style={{position: 'relative'}}>
             <div className="container-fluid" style={{backgroundColor: '#000', color: 'white', padding: '35px'}}>
@@ -72,47 +85,96 @@ function CreateProject() {
                 <h5><small className="text-body-secondary"><i>at least one option and one operator</i></small></h5>
             </div>
 
-            <div className="container-fluid d-flex justify-content-center" style={{position: 'absolute', top: '550px'}}>
-                <div className="dropdown">
-                    <button className="btn btn-dark dropdown-toggle" type="button" id="dropdownOptionsButton"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                        options
-                    </button>
-                    <ul className="dropdown-menu" aria-labelledby="dropdownOptionsButton">
-                        {['-o', '-p', '-l', '-rs -re', '-x', '-m'].map((option, index) => (
-                            <li key={index}>
-                                <a className="dropdown-item" href="#" data-bs-toggle="tooltip" title="description">
-                                    <div className="form-check">
-                                        <input className="form-check-input" type="checkbox" id={`option${index}`}/>
-                                        <label className="form-check-label" htmlFor={`option${index}`}>{option}</label>
-                                    </div>
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
+            <div className="container-fluid" style={{position: 'absolute', top: '550px'}}>
+                <div>
+                    <label>Select options:</label>
+                    <select multiple={true} onChange={handleOptionChange}>
+                        <option value="-o">-o</option>
+                        <option value="-p">-p</option>
+                        <option value="-l">-l</option>
+                        <option value="-rs-re">-rs-re</option>
+                        <option value="-x">-x</option>
+                        <option value="-m">-m</option>
+                    </select>
+
+
+                    {selectedOption.includes('-o') && (
+                        <div>
+                            <label>
+                                Directory:
+                                <input
+                                    type="text"
+                                    value={directory}
+                                    onChange={(e) => setDirectory(e.target.value)}/>
+                            </label>
+                        </div>
+                    )}
+
+                    {selectedOption.includes('-p') && (
+                        <div>
+                            <label>
+                                Compilation database file:
+                                <input
+                                    type="text"
+                                    value={path}
+                                    onChange={(e) => setPath(e.target.value)}/>
+                            </label>
+                        </div>
+                    )}
+
+                    {selectedOption.includes('-l') && (
+                        <div>
+                            <label>
+                                Maximum mutatants:
+                                <input
+                                    type="number"
+                                    value={maxmutants}
+                                    onChange={(e) => setMaxmutants(e.target.value)}/>
+                            </label>
+                        </div>
+                    )}
+
+                    {selectedOption.includes('-rs-re') && (
+                        <div>
+                            <label>
+                                Filename:
+                                <input
+                                    type="text"
+                                    value={filename}
+                                    onChange={(e) => setFilename(e.target.value)}/>
+                            </label>
+                            <label>
+                                Line:
+                                <input
+                                    type="number"
+                                    value={line}
+                                    onChange={(e) => setLine(e.target.value)}/>
+                            </label>
+                        </div>
+                    )}
+
+                    {selectedOption.includes('-x') && (
+                        <div>
+                            <label>
+                                Not be mutated:
+                                <input
+                                    type="text"
+                                    value={notmutated}
+                                    onChange={(e) => setNotmutated(e.target.value)}/>
+                            </label>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            <div className="container-fluid d-flex justify-content-center" style={{position: 'absolute', top: '590px'}}>
-                <div className="dropdown">
-                    <button className="btn btn-dark dropdown-toggle" type="button" id="dropdownOperatorsButton"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                        operators
-                    </button>
-                    <ul className="dropdown-menu" aria-labelledby="dropdownOperatorsButton">
-                        {['osln', 'obaa', 'orsn', 'obbb', 'ossn', 'oabb'].map((operator, index) => (
-                            <li key={index}>
-                                <a className="dropdown-item" href="#" data-bs-toggle="tooltip" title="description">
-                                    <div className="form-check">
-                                        <input className="form-check-input" type="checkbox" id={`operator${index}`}/>
-                                        <label className="form-check-label"
-                                               htmlFor={`operator${index}`}>{operator}</label>
-                                    </div>
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+            <div className="container-fluid" style={{position: 'absolute', left: '600px', top: '550px'}}>
+                <label>Select operators:</label>
+                <select multiple={true} onChange={handleOptionChange}>
+                    <option value="oaan">oaan</option>
+                    <option value="obbn">obbn</option>
+                    <option value="ossf">ossf</option>
+                    <option value="oaab">oaab</option>
+                </select>
             </div>
 
             <div className="container-fluid d-flex justify-content-center"
