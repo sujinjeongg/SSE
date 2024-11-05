@@ -28,10 +28,11 @@ function CreateProject() {
             hideThumbnailContent: true
         });
 
+        // 컴포넌트가 언마운트될 때 fileinput 해제
         return () => {
             $(fileInputRef.current).fileinput('destroy');
         };
-    }, []);
+    }, []); // 이 useEffect는 처음 마운트될 때만 실행됨
 
     useEffect(() => {
         if (!folderPath) return; // 폴더 경로가 설정되지 않은 경우 실행하지 않음
@@ -70,7 +71,8 @@ function CreateProject() {
                 socket.current.close();
             }
         };
-    }, []);
+    }, [folderPath]); // folderPath가 변경될 때만 이 useEffect가 실행됨
+
 
     const handleFileChange = (e) => {
         const files = e.target.files;
