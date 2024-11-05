@@ -10,10 +10,12 @@ import java.nio.file.*;
 @Service
 public class FolderService {
 
+    // JSON 형태로 변환하는 함수를 외부에서 호출할 때 사용하는 함수
     public JSONObject getFolderStructure(Path folderPath) throws IOException {
         return buildFolderJson(folderPath);
     }
 
+    // 폴더의 구조를 JSON 형태로 반환
     private JSONObject buildFolderJson(Path path) throws IOException {
         JSONObject folderJson = new JSONObject();
         folderJson.put("name", path.getFileName().toString());
