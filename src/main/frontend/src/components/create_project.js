@@ -7,7 +7,7 @@ import 'bootstrap-fileinput/css/fileinput.min.css';
 import 'bootstrap-fileinput/js/fileinput.min.js';
 
 function CreateProject() {
-    const [uploadStatus, setUploadStatus] = useState("폴더 업로드 준비중...")
+    const [uploadStatus, setUploadStatus] = useState("폴더 업로드 중...")
     const [folderPath, setFolderPath] = useState("");
     const [selectedOption, setSelectedOption] = useState('');
     const [directory, setDirectory] = useState('');
@@ -23,8 +23,9 @@ function CreateProject() {
     const socket = useRef(null);
 
     useEffect(() => {
+        // fileinput을 초기화하고, /file-upload-batch로 파일을 업로드
         $(fileInputRef.current).fileinput({
-            uploadUrl: "/file-upload-batch/2",
+            uploadUrl: `/file-upload-batch`,
             hideThumbnailContent: true
         });
 
@@ -38,7 +39,7 @@ function CreateProject() {
         if (!folderPath) return; // 폴더 경로가 설정되지 않은 경우 실행하지 않음
 
         // WebSocket을 컴포넌트가 처음 마운트될 때 한 번만 생성
-        socket.current = new WebSocket("ws://localhost:8080/folder"); // 컴포넌트가 마운트될 때 한 번만 WebSocket 객체를 생성
+        socket.current = new WebSocket("ws://localhost:8080/ws");
 
         // WebSocket 연결이 열리면 호출됨
         socket.current.onopen = () => {
@@ -57,6 +58,11 @@ function CreateProject() {
             }
         };
 
+        socket.current.onerror = (error) => {
+            console.error("WebSocket 오류:", error);
+            setUploadStatus("WebSocket 연결 오류");
+        };
+
         // WebSocket 연결이 종료되면 호출됨
         socket.current.onclose = () => {
             console.log("WebSocket 연결 종료");
@@ -71,7 +77,7 @@ function CreateProject() {
                 socket.current.close();
             }
         };
-    }, [folderPath]); // folderPath가 변경될 때만 이 useEffect가 실행됨
+    }, [folderPath]); // 이 useEffect는 folderPath가 변경될 때만 실행됨
 
 
     const handleFileChange = (e) => {
@@ -87,7 +93,7 @@ function CreateProject() {
                 socket.current.send(JSON.stringify(folderPaths));
             }
         } else {
-            setUploadStatus("파일이 선택되지 않았습니다.");
+            setUploadStatus("폴더가 선택되지 않았습니다.");
         }
     };
 
@@ -114,9 +120,9 @@ function CreateProject() {
             </div>
 
             <div className="container-fluid" style={{position: 'absolute', top: '345px', left: '150px', width: '40%'}}>
+                <h5>상태: {uploadStatus}</h5>
                 <div className="file-loading">
                     <input type="file" multiple webkitdirectory="true" onChange={handleFileChange} ref={fileInputRef}/>
-                    <h5>상태: {uploadStatus}</h5>
                 </div>
             </div>
 
