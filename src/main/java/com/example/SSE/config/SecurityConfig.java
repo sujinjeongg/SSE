@@ -12,16 +12,12 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        http.csrf(csrf -> csrf.disable());
-
-        // 권한 설정
         http
-                .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/ws/**").permitAll()  // "/ws/**" 경로에 대해 인증 요구하지 않음
-                        .anyRequest().authenticated()           // 그 외 경로는 인증 필요
-                );
-
+                .authorizeRequests()
+                .requestMatchers("/ws/**").permitAll()  //웹소켓 연결 차단되지 않도록 보안 예외
+                .anyRequest().permitAll()  // 모든 요청에 대해 인증 없이 허용
+                .and()
+                .csrf().disable();          // CSRF 보호 비활성화 (필요한 경우)
         return http.build();
     }
 }
