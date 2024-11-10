@@ -7,7 +7,7 @@ function App() {
    return (
        <Router>
            <Routes>
-               <Route path="/" element={<CreateProject />} />
+               <Route path="/SSE" element={<CreateProject />} />
                <Route path="/result" element={<Result />} />
            </Routes>
        </Router>
