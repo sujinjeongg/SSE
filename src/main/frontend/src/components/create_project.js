@@ -2,17 +2,21 @@ import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'mdb-ui-kit/css/mdb.min.css';
+import {useNavigate} from "react-router-dom";
 
 function CreateProject() {
     const [uploadStatus, setUploadStatus] = useState("폴더 업로드 준비중...")
     const [folderPath, setFolderPath] = useState("");
     const [selectedOption, setSelectedOption] = useState('');
+    const [selectedOperator, setSelectedOperator] = useState('');
     const [directory, setDirectory] = useState('');
     const [path, setPath] = useState('');
     const [maxmutants, setMaxmutants] = useState('');
-    const [filename, setFilename] = useState('');
-    const [line, setLine] = useState('');
+    const [filename, setFilename] = useState('model.c');
+    const [startline, setStartline] = useState('');
+    const [endline, setEndline] = useState('');
     const [notmutated, setNotmutated] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (!folderPath) return; // 폴더 경로가 설정되지 않은 경우 실행하지 않음
@@ -52,6 +56,16 @@ function CreateProject() {
         setSelectedOption((prev) =>
         prev.includes(value) ? prev.filter((opt) => opt !==value) : [...prev, value]);
     };
+
+    const handleOperatorChange = (e) => {
+        const value = e.target.value;
+        setSelectedOperator((prev) =>
+            prev.includes(value) ? prev.filter((opr) => opr !==value) : [...prev, value]);
+    };
+
+    const handleNavigate = () => {
+        navigate('/result');
+    }
 
     return (
         <div style={{position: 'relative'}}>
@@ -94,7 +108,6 @@ function CreateProject() {
                         <option value="-l">-l</option>
                         <option value="-rs-re">-rs-re</option>
                         <option value="-x">-x</option>
-                        <option value="-m">-m</option>
                     </select>
 
 
@@ -143,20 +156,28 @@ function CreateProject() {
                                     value={filename}
                                     onChange={(e) => setFilename(e.target.value)}/>
                             </label>
+                            <br/>
                             <label>
-                                Line:
+                                Start Line:
                                 <input
                                     type="number"
-                                    value={line}
-                                    onChange={(e) => setLine(e.target.value)}/>
+                                    value={startline}
+                                    onChange={(e) => setStartline(e.target.value)}/>
+                            </label>
+                            <label>
+                                End Line:
+                                <input
+                                    type="number"
+                                    value={endline}
+                                    onChange={(e) => setEndline(e.target.value)}/>
                             </label>
                         </div>
                     )}
 
-                    {selectedOption.includes('-x') && (
+                    {selectedOption.includes('-x') && ( //여러 line 입력하여 쉼표로 구분
                         <div>
                             <label>
-                                Not be mutated:
+                                Not be mutated line:
                                 <input
                                     type="text"
                                     value={notmutated}
@@ -169,17 +190,22 @@ function CreateProject() {
 
             <div className="container-fluid" style={{position: 'absolute', left: '1150px', top: '330px'}}>
                 <label>Select operators:</label>
-                <select multiple={true} onChange={handleOptionChange}>
-                    <option value="oaan">oaan</option>
-                    <option value="obbn">obbn</option>
-                    <option value="ossf">ossf</option>
-                    <option value="oaab">oaab</option>
+                <select multiple={true} value={selectedOperator}>
+                    {['oaan', 'obbn', 'ossf', 'oaab', 'vscr'].map((option) => (
+                        <option
+                            key={option}
+                            value={option}
+                            onClick={(e) => handleOperatorChange(e)}
+                        >
+                            {option}
+                        </option>
+                    ))}
                 </select>
             </div>
 
             <div className="container-fluid d-flex justify-content-center"
                  style={{position: 'absolute', top: '720px', paddingBottom: '30px'}}>
-                <button className="btn btn-dark" type="submit">Generate</button>
+                <button className="btn btn-dark" type="submit" onClick={handleNavigate}>Generate</button>
             </div>
         </div>
     );

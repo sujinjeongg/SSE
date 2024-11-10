@@ -2,7 +2,7 @@ import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
-const Result = () => {
+function Result() {
     return (
         <div style={{ position: 'relative' }}>
             <div className="container-fluid" style={{ backgroundColor: '#000', color: 'white', padding: '20px' }}>
