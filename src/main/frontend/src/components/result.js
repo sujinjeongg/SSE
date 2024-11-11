@@ -3,20 +3,32 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 function Result() {
+
     return (
-        <div style={{ position: 'relative' }}>
-            <div className="container-fluid" style={{ backgroundColor: '#000', color: 'white', padding: '20px' }}>
+        <div style={{position: 'relative'}}>
+            <div className="container-fluid" style={{backgroundColor: '#000', color: 'white', padding: '20px'}}>
                 <div className="d-flex justify-content-end">
-                    <button type="button" className="btn btn-light" style={{ width: '150px', height: '30px', fontSize: '0.9rem', marginRight: '43px', marginTop: '21px', paddingTop: '0', paddingBottom: '0' }}>
+                    <button type="button" className="btn btn-light" style={{
+                        width: '150px',
+                        height: '30px',
+                        fontSize: '0.9rem',
+                        marginRight: '43px',
+                        marginTop: '21px',
+                        paddingTop: '0',
+                        paddingBottom: '0'
+                    }}>
                         <b>New Project</b>
                     </button>
-                    <i className="bi bi-house-fill" style={{ fontSize: '2rem', marginRight: '26px', marginTop: '10px' }}></i>
-                    <i className="bi bi-person-circle" style={{ fontSize: '2rem', marginRight: '25px', marginTop: '10px' }}></i>
-                    <i className="bi bi-gear" style={{ fontSize: '2rem', marginRight: '5px', marginTop: '10px' }}></i>
+                    <i className="bi bi-house-fill"
+                       style={{fontSize: '2rem', marginRight: '26px', marginTop: '10px'}}></i>
+                    <i className="bi bi-person-circle"
+                       style={{fontSize: '2rem', marginRight: '25px', marginTop: '10px'}}></i>
+                    <i className="bi bi-gear" style={{fontSize: '2rem', marginRight: '5px', marginTop: '10px'}}></i>
                 </div>
-                <h3 style={{ marginTop: '30px' }}>Result</h3>
+                <h3 style={{marginTop: '30px'}}>Result</h3>
             </div>
-            <div className="container-fluid" style={{ position: 'absolute', top: '220px', width: '50%', marginLeft: '590px' }}>
+            <div className="container-fluid"
+                 style={{position: 'absolute', top: '220px', width: '50%', marginLeft: '590px'}}>
                 <div className="row">
                     <div className="col">
                         <select className="form-select" aria-label="Default select example">
@@ -31,12 +43,12 @@ function Result() {
                     </div>
                 </div>
             </div>
-            <div className="card" style={{ position: 'absolute', top: '280px', marginLeft: '430px', width: '50%' }}>
+            <div className="card" style={{position: 'absolute', top: '280px', marginLeft: '430px', width: '50%'}}>
                 <div className="card-header">
                     input01_modified.c
                 </div>
                 <div className="card-body">
-                    <pre className="bg-light p-3" style={{ height: '550px', overflowY: 'auto' }}>
+                    <pre className="bg-light p-3" style={{height: '550px', overflowY: 'auto'}}>
                         <code>
                             {`#include <stdio.h>
 #include <stdlib.h>
@@ -59,26 +71,6 @@ void append(struct Node** head_ref, int new_data) {
     // 리스트가 비어 있으면 새 노드를 헤드로 설정
     if (*head_ref == NULL) {
         *head_ref = new_node;
-        return;
-    }
-
-    // 마지막 노드를 찾기
-    while (last->next != NULL) {
-        last = last->next;
-    }
-
-    // 마지막 노드의 다음을 새 노드로 연결
-    last->next = new_node;
-}
-
-// 리스트에서 특정 값을 가진 첫 번째 노드를 삭제하는 함수
-void deleteNode(struct Node** head_ref, int key) {
-    struct Node* temp = *head_ref, *prev;
-
-    // 헤드 노드가 삭제할 노드인 경우 처리
-    if (temp != NULL && temp->data == key) {
-        *head_ref = temp->next; // 헤드를 다음 노드로 이동
-        free(temp); // 헤드 삭제
         return;
     }
 
@@ -127,10 +119,11 @@ int main() {
                     </pre>
                     <a href="#" className="btn btn-primary">Edit</a>
                     <a href="#" className="btn btn-primary">Log Record</a>
-                    <a href="#" className="btn btn-primary" style={{ marginLeft: '500px' }}>Download</a>
+                    <a href="#" className="btn btn-primary" style={{marginLeft: '500px'}}>Download</a>
                 </div>
             </div>
         </div>
+
     );
 }
 
