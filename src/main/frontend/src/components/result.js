@@ -1,8 +1,11 @@
 import React from 'react';
+import { useLocation } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 function Result() {
+    const location = useLocation();
+    const mutationResult = location.state?.mutationResult || "No result available";
 
     return (
         <div style={{position: 'relative'}}>
@@ -50,71 +53,7 @@ function Result() {
                 <div className="card-body">
                     <pre className="bg-light p-3" style={{height: '550px', overflowY: 'auto'}}>
                         <code>
-                            {`#include <stdio.h>
-#include <stdlib.h>
-
-// 연결 리스트의 노드를 정의
-struct Node {
-    int data;
-    struct Node* next;
-};
-
-// 새 노드를 리스트 끝에 추가하는 함수
-void append(struct Node** head_ref, int new_data) {
-    // 새 노드를 할당
-    struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
-    struct Node* last = *head_ref; // 마지막 노드 탐색에 사용
-
-    new_node->data = new_data;
-    new_node->next = NULL; // 새 노드는 마지막 노드이므로 NULL
-
-    // 리스트가 비어 있으면 새 노드를 헤드로 설정
-    if (*head_ref == NULL) {
-        *head_ref = new_node;
-        return;
-    }
-
-    // 삭제할 노드를 찾기
-    while (temp != NULL && temp->data != key) {
-        prev = temp;
-        temp = temp->next;
-    }
-
-    // 리스트에 key가 없는 경우
-    if (temp == NULL) return;
-
-    // 노드를 리스트에서 제거
-    prev->next = temp->next;
-    free(temp); // 메모리 해제
-}
-
-// 연결 리스트를 출력하는 함수
-void printList(struct Node* node) {
-    while (node != NULL) {
-        printf(" %d ->", node->data);
-        node = node->next;
-    }
-    printf(" NULL\n");
-}
-
-int main() {
-    struct Node* head = NULL;
-
-    // 노드들을 연결 리스트에 추가
-    append(&head, 1);
-    append(&head, 2);
-    append(&head, 3);
-    append(&head, 4);
-
-    printf("Created Linked list: ");
-    printList(head);
-
-    // 특정 값의 노드 삭제
-    deleteNode(&head, 2);
-    printf("Linked list after deletion of 2: ");
-    printList(head);
-
-    return 0;`}
+                            {mutationResult}
                         </code>
                     </pre>
                     <a href="#" className="btn btn-primary">Edit</a>

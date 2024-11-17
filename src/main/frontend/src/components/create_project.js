@@ -3,25 +3,28 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'mdb-ui-kit/css/mdb.min.css';
 import {useNavigate} from "react-router-dom";
+import axios from 'axios';
 
 function CreateProject() {
     const [uploadStatus, setUploadStatus] = useState("폴더 업로드 준비중...")
     const [folderPath, setFolderPath] = useState("");
     const [selectedOption, setSelectedOption] = useState('');
     const [selectedOperator, setSelectedOperator] = useState('');
-    const [directory, setDirectory] = useState('');
-    const [path, setPath] = useState('');
-    const [maxmutants, setMaxmutants] = useState('');
-    const [filename, setFilename] = useState('model.c');
-    const [startline, setStartline] = useState('');
-    const [endline, setEndline] = useState('');
-    const [notmutated, setNotmutated] = useState('');
+    const [modelFilePath, setModelFilePath] = useState('');
+    const [compileDatabasePath, setCompileDatabasePath] = useState('');
+    const [outputDirectory, setOutputDirectory] = useState('');
+    const [maxMutants, setMaxMutants] = useState('');
+    const [startFilename, setStartFilename] = useState('firstmodel.c');
+    const [startLine, setStartLine] = useState(0);
+    const [endFilename, setEndFilename] = useState('endmodel.c');
+    const [endLine, setEndLine] = useState(0);
+    const [notMutatedLine, setNotMutatedLine] = useState(-1);
     const navigate = useNavigate();
 
     useEffect(() => {
         if (!folderPath) return; // 폴더 경로가 설정되지 않은 경우 실행하지 않음
 
-        const socket = new WebSocket("ws://localhost:8080/folder");
+        const socket = new WebSocket("wss://localhost:8084/folder");
 
         // WebSocket 연결이 열리면 호출됨
         socket.onopen = () => {
@@ -57,15 +60,23 @@ function CreateProject() {
         prev.includes(value) ? prev.filter((opt) => opt !==value) : [...prev, value]);
     };
 
+    const handleGenerate = async () => {
+        try {
+            const response = await axios.post('/api/mutation/apply', {
+                modelFilePath, compileDatabasePath, outputDirectory, maxMutants, startFilename, startLine, endFilename, endLine, notMutatedLine, mutantOperator: selectedOperator.join(','),
+            });
+            navigate('/result', { state: { mutationResult: response.data } });
+        } catch (e) {
+            console.error(e);
+            navigate('/result', { state: { mutationResult: `Error: ${e.response?.data || e.message}` } });
+        }
+    };
+
     const handleOperatorChange = (e) => {
         const value = e.target.value;
         setSelectedOperator((prev) =>
             prev.includes(value) ? prev.filter((opr) => opr !==value) : [...prev, value]);
     };
-
-    const handleNavigate = () => {
-        navigate('/result');
-    }
 
     return (
         <div style={{position: 'relative'}}>
@@ -88,6 +99,7 @@ function CreateProject() {
                     type="text"
                     className="form-control"
                     placeholder="폴더 경로를 입력하세요"
+                    value = {folderPath}
                     onChange={(e) => setFolderPath(e.target.value)}
                     style={{width: '40%', marginBottom: '10px'}}
                 />
@@ -103,25 +115,13 @@ function CreateProject() {
                 <div>
                     <label>Select options:</label>
                     <select multiple={true} onChange={handleOptionChange}>
-                        <option value="-o">-o</option>
                         <option value="-p">-p</option>
+                        <option value="-o">-o</option>
                         <option value="-l">-l</option>
-                        <option value="-rs-re">-rs-re</option>
+                        <option value="-rs">-rs</option>
+                        <option value="-re">-re</option>
                         <option value="-x">-x</option>
                     </select>
-
-
-                    {selectedOption.includes('-o') && (
-                        <div>
-                            <label>
-                                Directory:
-                                <input
-                                    type="text"
-                                    value={directory}
-                                    onChange={(e) => setDirectory(e.target.value)}/>
-                            </label>
-                        </div>
-                    )}
 
                     {selectedOption.includes('-p') && (
                         <div>
@@ -129,8 +129,20 @@ function CreateProject() {
                                 Compilation database file:
                                 <input
                                     type="text"
-                                    value={path}
-                                    onChange={(e) => setPath(e.target.value)}/>
+                                    value={compileDatabasePath}
+                                    onChange={(e) => setCompileDatabasePath(e.target.value)}/>
+                            </label>
+                        </div>
+                    )}
+
+                    {selectedOption.includes('-o') && (
+                        <div>
+                            <label>
+                                Directory:
+                                <input
+                                    type="text"
+                                    value={outputDirectory}
+                                    onChange={(e) => setOutputDirectory(e.target.value)}/>
                             </label>
                         </div>
                     )}
@@ -138,38 +150,51 @@ function CreateProject() {
                     {selectedOption.includes('-l') && (
                         <div>
                             <label>
-                                Maximum mutatants:
+                                Maximum mutants:
                                 <input
                                     type="number"
-                                    value={maxmutants}
-                                    onChange={(e) => setMaxmutants(e.target.value)}/>
+                                    value={maxMutants}
+                                    onChange={(e) => setMaxMutants(e.target.value)}/>
                             </label>
                         </div>
                     )}
 
-                    {selectedOption.includes('-rs-re') && (
+                    {selectedOption.includes('-rs') && (
                         <div>
                             <label>
-                                Filename:
+                                Start Filename:
                                 <input
                                     type="text"
-                                    value={filename}
-                                    onChange={(e) => setFilename(e.target.value)}/>
+                                    value={startFilename}
+                                    onChange={(e) => setStartFilename(e.target.value)}/>
                             </label>
                             <br/>
                             <label>
                                 Start Line:
                                 <input
                                     type="number"
-                                    value={startline}
-                                    onChange={(e) => setStartline(e.target.value)}/>
+                                    value={startLine}
+                                    onChange={(e) => setStartLine(e.target.value)}/>
                             </label>
+                        </div>
+                    )}
+
+                    {selectedOption.includes('-re') && (
+                        <div>
+                            <label>
+                                End Filename:
+                                <input
+                                    type="text"
+                                    value={endFilename}
+                                    onChange={(e) => setEndFilename(e.target.value)}/>
+                            </label>
+                            <br/>
                             <label>
                                 End Line:
                                 <input
                                     type="number"
-                                    value={endline}
-                                    onChange={(e) => setEndline(e.target.value)}/>
+                                    value={endLine}
+                                    onChange={(e) => setEndLine(e.target.value)}/>
                             </label>
                         </div>
                     )}
@@ -180,8 +205,8 @@ function CreateProject() {
                                 Not be mutated line:
                                 <input
                                     type="text"
-                                    value={notmutated}
-                                    onChange={(e) => setNotmutated(e.target.value)}/>
+                                    value={notMutatedLine}
+                                    onChange={(e) => setNotMutatedLine(e.target.value)}/>
                             </label>
                         </div>
                     )}
@@ -205,7 +230,7 @@ function CreateProject() {
 
             <div className="container-fluid d-flex justify-content-center"
                  style={{position: 'absolute', top: '720px', paddingBottom: '30px'}}>
-                <button className="btn btn-dark" type="submit" onClick={handleNavigate}>Generate</button>
+                <button className="btn btn-dark" type="submit" onClick={handleGenerate}>Generate</button>
             </div>
         </div>
     );
