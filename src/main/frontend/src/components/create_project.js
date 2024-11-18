@@ -22,37 +22,40 @@ function CreateProject() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!folderPath) return; // 폴더 경로가 설정되지 않은 경우 실행하지 않음
+        let socket;
 
-        const socket = new WebSocket("wss://localhost:8084/folder");
+        if (folderPath) {
+            socket = new WebSocket("ws://localhost:8080/folder");
 
-        // WebSocket 연결이 열리면 호출됨
-        socket.onopen = () => {
-            console.log("WebSocket 연결됨");
-            setUploadStatus("폴더 업로드 중...");
-            // WebSocket이 열리면 사용자가 입력한 폴더 경로를 전송
-            socket.send(folderPath);
-        };
+            socket.onopen = () => {
+                console.log("WebSocket 연결됨");
+                setUploadStatus("폴더 업로드 중...");
+                socket.send(folderPath);
+            };
 
-        // 서버로부터 메시지를 받으면 호출됨
-        socket.onmessage = (event) => {
-            // 서버에서 완료 메시지를 받으면 업로드 완료 상태로 변경
-            setUploadStatus("업로드 완료");
-            console.log("서버로부터의 응답:", event.data);
-        };
+            socket.onmessage = (event) => {
+                setUploadStatus("업로드 완료");
+                console.log("서버로부터의 응답:", event.data);
+            };
 
-        // WebSocket 연결이 종료되면 호출됨
-        socket.onclose = () => {
-            console.log("WebSocket 연결 종료");
-            if (uploadStatus === "폴더 업로드 중...") {
+            socket.onerror = (error) => {
+                console.error("WebSocket 오류:", error);
                 setUploadStatus("업로드 실패");
-            }
-        };
+            };
+
+            socket.onclose = () => {
+                console.log("WebSocket 연결 종료");
+                if (uploadStatus === "폴더 업로드 중...") {
+                    setUploadStatus("업로드 실패");
+                }
+            };
+        }
 
         return () => {
-            socket.close();
+            if (socket) socket.close();
         };
     }, [folderPath]);
+
 
     const handleOptionChange = (e) => {
         const value = e.target.value;
@@ -99,7 +102,7 @@ function CreateProject() {
                     type="text"
                     className="form-control"
                     placeholder="폴더 경로를 입력하세요"
-                    value = {folderPath}
+                    //value = {folderPath}
                     onChange={(e) => setFolderPath(e.target.value)}
                     style={{width: '40%', marginBottom: '10px'}}
                 />

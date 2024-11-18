@@ -23,9 +23,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
         String requestedPath = message.getPayload();
-        Path folerPath = Paths.get(requestedPath);
+        Path folderPath = Paths.get(requestedPath);
 
-        JSONObject folderStructure = folderService.getFolderStructure(folerPath);
+        JSONObject folderStructure = folderService.getFolderStructure(folderPath);
         session.sendMessage(new TextMessage(folderStructure.toString()));
     }
 }
