@@ -8,7 +8,7 @@ import axios from 'axios';
 function CreateProject() {
     const [uploadStatus, setUploadStatus] = useState("폴더 업로드 준비중...")
     const [folderPath, setFolderPath] = useState("");
-    const [selectedOption, setSelectedOption] = useState('');
+    const [selectedOption, setSelectedOption] = useState([]);
     const [selectedOperator, setSelectedOperator] = useState('');
     const [modelFilePath, setModelFilePath] = useState('');
     const [compileDatabasePath, setCompileDatabasePath] = useState('');
@@ -22,26 +22,26 @@ function CreateProject() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!folderPath) return; // 폴더 경로가 없으면 실행하지 않음
+        if (!folderPath) return; // 폴더 경로가 설정되지 않은 경우 실행하지 않음
 
-        const socket = new WebSocket("ws://localhost:8080/folder");
+        const socket = new WebSocket("wss://localhost:8082/folder");
 
+        // WebSocket 연결이 열리면 호출됨
         socket.onopen = () => {
-            console.log("WebSocket 연결 성공");
+            console.log("WebSocket 연결됨");
             setUploadStatus("폴더 업로드 중...");
-            socket.send(folderPath); // 폴더 경로를 서버로 전송
+            // WebSocket이 열리면 사용자가 입력한 폴더 경로를 전송
+            socket.send(folderPath);
         };
 
+        // 서버로부터 메시지를 받으면 호출됨
         socket.onmessage = (event) => {
+            // 서버에서 완료 메시지를 받으면 업로드 완료 상태로 변경
+            setUploadStatus("업로드 완료");
             console.log("서버로부터의 응답:", event.data);
-            setUploadStatus(event.data); // 서버의 메시지를 상태로 업데이트
         };
 
-        socket.onerror = (error) => {
-            console.error("WebSocket 오류:", error);
-            setUploadStatus("업로드 실패: 서버 오류 발생");
-        };
-
+        // WebSocket 연결이 종료되면 호출됨
         socket.onclose = () => {
             console.log("WebSocket 연결 종료");
             if (uploadStatus === "폴더 업로드 중...") {
@@ -50,15 +50,20 @@ function CreateProject() {
         };
 
         return () => {
-            socket.close(); // 컴포넌트가 언마운트되면 WebSocket 연결 종료
+            socket.close();
         };
-    }, [folderPath, uploadStatus]);
-
+    }, [folderPath]);
 
     const handleOptionChange = (e) => {
         const value = e.target.value;
         setSelectedOption((prev) =>
         prev.includes(value) ? prev.filter((opt) => opt !==value) : [...prev, value]);
+    };
+
+    const handleOperatorChange = (e) => {
+        const value = e.target.value;
+        setSelectedOperator((prev) =>
+            prev.includes(value) ? prev.filter((opr) => opr !==value) : [...prev, value]);
     };
 
     const handleGenerate = async () => {
@@ -71,12 +76,6 @@ function CreateProject() {
             console.error(e);
             navigate('/result', { state: { mutationResult: `Error: ${e.response?.data || e.message}` } });
         }
-    };
-
-    const handleOperatorChange = (e) => {
-        const value = e.target.value;
-        setSelectedOperator((prev) =>
-            prev.includes(value) ? prev.filter((opr) => opr !==value) : [...prev, value]);
     };
 
     return (
@@ -114,7 +113,7 @@ function CreateProject() {
             <div className="container-fluid" style={{position: 'absolute', top: '330px', left: '850px'}}>
                 <div>
                     <label>Select options:</label>
-                    <select multiple={true} onChange={handleOptionChange}>
+                    <select multiple={true} value={selectedOption} onChange={handleOptionChange}>
                         <option value="-p">-p</option>
                         <option value="-o">-o</option>
                         <option value="-l">-l</option>
@@ -204,7 +203,7 @@ function CreateProject() {
                             <label>
                                 Not be mutated line:
                                 <input
-                                    type="text"
+                                    type="number"
                                     value={notMutatedLine}
                                     onChange={(e) => setNotMutatedLine(e.target.value)}/>
                             </label>
