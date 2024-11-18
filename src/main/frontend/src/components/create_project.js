@@ -17,44 +17,42 @@ function CreateProject() {
     const [startFilename, setStartFilename] = useState('firstmodel.c');
     const [startLine, setStartLine] = useState(0);
     const [endFilename, setEndFilename] = useState('endmodel.c');
-    const [endLine, setEndLine] = useState(0);
+    const [endLine, setEndLine] = useState(100);
     const [notMutatedLine, setNotMutatedLine] = useState(-1);
     const navigate = useNavigate();
 
     useEffect(() => {
-        let socket;
+        if (!folderPath) return; // 폴더 경로가 없으면 실행하지 않음
 
-        if (folderPath) {
-            socket = new WebSocket("ws://localhost:8080/folder");
+        const socket = new WebSocket("ws://localhost:8080/folder");
 
-            socket.onopen = () => {
-                console.log("WebSocket 연결됨");
-                setUploadStatus("폴더 업로드 중...");
-                socket.send(folderPath);
-            };
+        socket.onopen = () => {
+            console.log("WebSocket 연결 성공");
+            setUploadStatus("폴더 업로드 중...");
+            socket.send(folderPath); // 폴더 경로를 서버로 전송
+        };
 
-            socket.onmessage = (event) => {
-                setUploadStatus("업로드 완료");
-                console.log("서버로부터의 응답:", event.data);
-            };
+        socket.onmessage = (event) => {
+            console.log("서버로부터의 응답:", event.data);
+            setUploadStatus(event.data); // 서버의 메시지를 상태로 업데이트
+        };
 
-            socket.onerror = (error) => {
-                console.error("WebSocket 오류:", error);
+        socket.onerror = (error) => {
+            console.error("WebSocket 오류:", error);
+            setUploadStatus("업로드 실패: 서버 오류 발생");
+        };
+
+        socket.onclose = () => {
+            console.log("WebSocket 연결 종료");
+            if (uploadStatus === "폴더 업로드 중...") {
                 setUploadStatus("업로드 실패");
-            };
-
-            socket.onclose = () => {
-                console.log("WebSocket 연결 종료");
-                if (uploadStatus === "폴더 업로드 중...") {
-                    setUploadStatus("업로드 실패");
-                }
-            };
-        }
+            }
+        };
 
         return () => {
-            if (socket) socket.close();
+            socket.close(); // 컴포넌트가 언마운트되면 WebSocket 연결 종료
         };
-    }, [folderPath]);
+    }, [folderPath, uploadStatus]);
 
 
     const handleOptionChange = (e) => {
@@ -102,7 +100,6 @@ function CreateProject() {
                     type="text"
                     className="form-control"
                     placeholder="폴더 경로를 입력하세요"
-                    //value = {folderPath}
                     onChange={(e) => setFolderPath(e.target.value)}
                     style={{width: '40%', marginBottom: '10px'}}
                 />
