@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 
 function Result() {
+    const location = useLocation();
+
     const [files] = useState([
         { id: 1, name: "input01_modified.c" },
         { id: 2, name: "input02_modified.c" },
@@ -11,84 +14,6 @@ function Result() {
 
     const handleFileSelect = (file) => {
         setSelectedFile(file);
-    };
-
-    const styles = {
-        container: {
-            display: "flex",
-            flexDirection: "column",
-            height: "100vh",
-            fontFamily: "Arial, sans-serif",
-        },
-        header: {
-            backgroundColor: "#000",
-            color: "white",
-            padding: "35px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-        },
-        icon: {
-            fontSize: "2rem",
-            margin: "0 15px",
-            cursor: "pointer",
-        },
-        title: {
-            margin: "30px 0 0 0",
-            fontSize: "1.5rem",
-            fontWeight: "bold",
-        },
-        content: {
-            display: "flex",
-            flex: 1,
-            overflow: "hidden",
-        },
-        sidebar: {
-            width: "20%",
-            backgroundColor: "#f8f9fa",
-            padding: "20px",
-            boxShadow: "2px 0 5px rgba(0, 0, 0, 0.1)",
-            overflowY: "auto",
-        },
-        fileItem: {
-            padding: "10px 15px",
-            margin: "5px 0",
-            borderRadius: "5px",
-            cursor: "pointer",
-        },
-        mainContent: {
-            flex: 1,
-            padding: "20px",
-            backgroundColor: "#fff",
-            overflowY: "auto",
-        },
-        card: {
-            border: "1px solid #ddd",
-            borderRadius: "5px",
-            padding: "15px",
-            marginBottom: "20px",
-        },
-        cardHeader: {
-            fontWeight: "bold",
-            borderBottom: "1px solid #ddd",
-            paddingBottom: "10px",
-            marginBottom: "10px",
-        },
-        button: {
-            marginRight: "10px",
-            padding: "8px 15px",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-        },
-        primaryButton: {
-            backgroundColor: "#007bff",
-            color: "#fff",
-        },
-        secondaryButton: {
-            backgroundColor: "#6c757d",
-            color: "#fff",
-        },
     };
 
     return (
@@ -168,5 +93,83 @@ function Result() {
         </div>
     );
 }
+
+const styles = {
+    container: {
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        fontFamily: "Arial, sans-serif",
+    },
+    header: {
+        backgroundColor: "#000",
+        color: "white",
+        padding: "35px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    icon: {
+        fontSize: "2rem",
+        margin: "0 15px",
+        cursor: "pointer",
+    },
+    title: {
+        margin: "30px 0 0 0",
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+    },
+    content: {
+        display: "flex",
+        flex: 1,
+        overflow: "hidden",
+    },
+    sidebar: {
+        width: "20%",
+        backgroundColor: "#f8f9fa",
+        padding: "20px",
+        boxShadow: "2px 0 5px rgba(0, 0, 0, 0.1)",
+        overflowY: "auto",
+    },
+    fileItem: {
+        padding: "10px 15px",
+        margin: "5px 0",
+        borderRadius: "5px",
+        cursor: "pointer",
+    },
+    mainContent: {
+        flex: 1,
+        padding: "20px",
+        backgroundColor: "#fff",
+        overflowY: "auto",
+    },
+    card: {
+        border: "1px solid #ddd",
+        borderRadius: "5px",
+        padding: "15px",
+        marginBottom: "20px",
+    },
+    cardHeader: {
+        fontWeight: "bold",
+        borderBottom: "1px solid #ddd",
+        paddingBottom: "10px",
+        marginBottom: "10px",
+    },
+    button: {
+        marginRight: "10px",
+        padding: "8px 15px",
+        border: "none",
+        borderRadius: "5px",
+        cursor: "pointer",
+    },
+    primaryButton: {
+        backgroundColor: "#007bff",
+        color: "#fff",
+    },
+    secondaryButton: {
+        backgroundColor: "#6c757d",
+        color: "#fff",
+    },
+};
 
 export default Result;

@@ -84,10 +84,10 @@ function CreateProject() {
                 notMutatedLine,
                 mutantOperator: selectedOperator.join(','),
             });
-            navigate('/result', { state: { mutationResult: response.data } });
+            navigate('/result', { state: { mutationResult: response.data, files: response.data.files || [] /*변이 적용된 파일 리스트*/ } });
         } catch (e) {
             console.error(e);
-            navigate('/result', { state: { mutationResult: `Error: ${e.response?.data || e.message}` } });
+            navigate('/result', { state: { Error: e.response?.data || e.message } });
         }
     };
 
