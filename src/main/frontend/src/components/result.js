@@ -1,68 +1,171 @@
-import React from 'react';
-import { useLocation } from "react-router-dom";
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import React, { useState } from "react";
 
 function Result() {
-    const location = useLocation();
-    const mutationResult = location.state?.mutationResult || "No result available";
+    const [files] = useState([
+        { id: 1, name: "input01_modified.c" },
+        { id: 2, name: "input02_modified.c" },
+        { id: 3, name: "input03_modified.c" },
+        { id: 4, name: "input04_modified.c" },
+    ]);
+    const [selectedFile, setSelectedFile] = useState(files[0]);
+
+    const handleFileSelect = (file) => {
+        setSelectedFile(file);
+    };
+
+    const styles = {
+        container: {
+            display: "flex",
+            flexDirection: "column",
+            height: "100vh",
+            fontFamily: "Arial, sans-serif",
+        },
+        header: {
+            backgroundColor: "#000",
+            color: "white",
+            padding: "35px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+        },
+        icon: {
+            fontSize: "2rem",
+            margin: "0 15px",
+            cursor: "pointer",
+        },
+        title: {
+            margin: "30px 0 0 0",
+            fontSize: "1.5rem",
+            fontWeight: "bold",
+        },
+        content: {
+            display: "flex",
+            flex: 1,
+            overflow: "hidden",
+        },
+        sidebar: {
+            width: "20%",
+            backgroundColor: "#f8f9fa",
+            padding: "20px",
+            boxShadow: "2px 0 5px rgba(0, 0, 0, 0.1)",
+            overflowY: "auto",
+        },
+        fileItem: {
+            padding: "10px 15px",
+            margin: "5px 0",
+            borderRadius: "5px",
+            cursor: "pointer",
+        },
+        mainContent: {
+            flex: 1,
+            padding: "20px",
+            backgroundColor: "#fff",
+            overflowY: "auto",
+        },
+        card: {
+            border: "1px solid #ddd",
+            borderRadius: "5px",
+            padding: "15px",
+            marginBottom: "20px",
+        },
+        cardHeader: {
+            fontWeight: "bold",
+            borderBottom: "1px solid #ddd",
+            paddingBottom: "10px",
+            marginBottom: "10px",
+        },
+        button: {
+            marginRight: "10px",
+            padding: "8px 15px",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+        },
+        primaryButton: {
+            backgroundColor: "#007bff",
+            color: "#fff",
+        },
+        secondaryButton: {
+            backgroundColor: "#6c757d",
+            color: "#fff",
+        },
+    };
 
     return (
-        <div style={{position: 'relative'}}>
-            <div className="container-fluid" style={{backgroundColor: '#000', color: 'white', padding: '20px'}}>
-                <div className="d-flex justify-content-end">
-                    <button type="button" className="btn btn-light" style={{
-                        width: '150px',
-                        height: '30px',
-                        fontSize: '0.9rem',
-                        marginRight: '43px',
-                        marginTop: '21px',
-                        paddingTop: '0',
-                        paddingBottom: '0'
-                    }}>
-                        <b>New Project</b>
-                    </button>
-                    <i className="bi bi-house-fill"
-                       style={{fontSize: '2rem', marginRight: '26px', marginTop: '10px'}}></i>
-                    <i className="bi bi-person-circle"
-                       style={{fontSize: '2rem', marginRight: '25px', marginTop: '10px'}}></i>
-                    <i className="bi bi-gear" style={{fontSize: '2rem', marginRight: '5px', marginTop: '10px'}}></i>
+        <div style={styles.container}>
+            {/* 헤더 */}
+            <div style={styles.header}>
+                <div>
+                    <h3 style={styles.title}>Create New Project</h3>
                 </div>
-                <h3 style={{marginTop: '30px'}}>Result</h3>
-            </div>
-            <div className="container-fluid"
-                 style={{position: 'absolute', top: '220px', width: '50%', marginLeft: '590px'}}>
-                <div className="row">
-                    <div className="col">
-                        <select className="form-select" aria-label="Default select example">
-                            <option selected>input01_modified.c</option>
-                            <option value="1">input02_modified.c</option>
-                            <option value="2">input03_modified.c</option>
-                            <option value="3">input04_modified.c</option>
-                        </select>
-                    </div>
-                    <div className="col">
-                        <button className="btn btn-primary" type="submit">Download.zip</button>
-                    </div>
+                <div>
+                    <i className="bi bi-house-fill" style={styles.icon}></i>
+                    <i className="bi bi-person-circle" style={styles.icon}></i>
+                    <i className="bi bi-gear" style={styles.icon}></i>
                 </div>
             </div>
-            <div className="card" style={{position: 'absolute', top: '280px', marginLeft: '430px', width: '50%'}}>
-                <div className="card-header">
-                    input01_modified.c
+
+            {/* 콘텐츠 */}
+            <div style={styles.content}>
+                {/* 사이드바 */}
+                <div style={styles.sidebar}>
+                    <h3>Files</h3>
+                    {files.map((file) => (
+                        <div
+                            key={file.id}
+                            style={{
+                                ...styles.fileItem,
+                                backgroundColor:
+                                    selectedFile.id === file.id
+                                        ? "#d3d3d3"
+                                        : "transparent",
+                            }}
+                            onClick={() => handleFileSelect(file)}
+                        >
+                            {file.name}
+                        </div>
+                    ))}
                 </div>
-                <div className="card-body">
-                    <pre className="bg-light p-3" style={{height: '550px', overflowY: 'auto'}}>
-                        <code>
-                            {mutationResult}
-                        </code>
-                    </pre>
-                    <a href="#" className="btn btn-primary">Edit</a>
-                    <a href="#" className="btn btn-primary">Log Record</a>
-                    <a href="#" className="btn btn-primary" style={{marginLeft: '500px'}}>Download</a>
+
+                {/* 메인 콘텐츠 */}
+                <div style={styles.mainContent}>
+                    <div style={styles.card}>
+                        <div style={styles.cardHeader}>
+                            {selectedFile.name}
+                        </div>
+                        <div>
+                            <pre
+                                style={{
+                                    backgroundColor: "#f8f9fa",
+                                    padding: "10px",
+                                    height: "400px",
+                                    overflowY: "scroll",
+                                }}
+                            >
+                                <code>
+                                    {`#include <stdio.h>\nint main() {\n  printf("Hello, World!\\n");\n  return 0;\n}`}
+                                </code>
+                            </pre>
+                            <button
+                                style={{ ...styles.button, ...styles.primaryButton }}
+                            >
+                                Edit
+                            </button>
+                            <button
+                                style={{ ...styles.button, ...styles.secondaryButton }}
+                            >
+                                Log Record
+                            </button>
+                            <button
+                                style={{ ...styles.button, ...styles.primaryButton }}
+                            >
+                                Download
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
     );
 }
 
