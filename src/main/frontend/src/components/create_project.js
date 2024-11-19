@@ -9,18 +9,18 @@ function CreateProject() {
     const [uploadStatus, setUploadStatus] = useState("폴더 업로드 준비중...")
     const [folderPath, setFolderPath] = useState("");
     const [selectedOption, setSelectedOption] = useState([]);
-    const [selectedOperator, setSelectedOperator] = useState('');
-    const [modelFilePath, setModelFilePath] = useState('');
+    const [selectedOperator, setSelectedOperator] = useState([]);
     const [compileDatabasePath, setCompileDatabasePath] = useState('');
     const [outputDirectory, setOutputDirectory] = useState('');
     const [maxMutants, setMaxMutants] = useState('');
-    const [startFilename, setStartFilename] = useState('firstmodel.c');
+    const [startFilename, setStartFilename] = useState('');
     const [startLine, setStartLine] = useState(0);
-    const [endFilename, setEndFilename] = useState('endmodel.c');
+    const [endFilename, setEndFilename] = useState('');
     const [endLine, setEndLine] = useState(100);
     const [notMutatedLine, setNotMutatedLine] = useState(-1);
     const navigate = useNavigate();
 
+    // 웹소켓 통신: 폴더 업로드 처리
     useEffect(() => {
         if (!folderPath) return; // 폴더 경로가 설정되지 않은 경우 실행하지 않음
 
@@ -54,22 +54,35 @@ function CreateProject() {
         };
     }, [folderPath]);
 
+
+    // 이미 선택된 옵션을 다시 클릭하면 선택 해제됨
     const handleOptionChange = (e) => {
         const value = e.target.value;
         setSelectedOption((prev) =>
         prev.includes(value) ? prev.filter((opt) => opt !==value) : [...prev, value]);
     };
 
+    // 이미 선택된 연산자를 다시 클릭하면 선택 해제됨
     const handleOperatorChange = (e) => {
         const value = e.target.value;
         setSelectedOperator((prev) =>
             prev.includes(value) ? prev.filter((opr) => opr !==value) : [...prev, value]);
     };
 
+    // 서버로부터 변이 생성 관련 데이터들을 받아와 '/result'페이지에 데이터들을 전달
     const handleGenerate = async () => {
         try {
             const response = await axios.post('/api/mutation/apply', {
-                modelFilePath, compileDatabasePath, outputDirectory, maxMutants, startFilename, startLine, endFilename, endLine, notMutatedLine, mutantOperator: selectedOperator.join(','),
+                folderPath,
+                compilePath: compileDatabasePath,
+                outputDirectory,
+                maxMutants,
+                startFilename,
+                startLine,
+                endFilename,
+                endLine,
+                notMutatedLine,
+                mutantOperator: selectedOperator.join(','),
             });
             navigate('/result', { state: { mutationResult: response.data } });
         } catch (e) {
@@ -99,6 +112,7 @@ function CreateProject() {
                     type="text"
                     className="form-control"
                     placeholder="폴더 경로를 입력하세요"
+                    value={folderPath}
                     onChange={(e) => setFolderPath(e.target.value)}
                     style={{width: '40%', marginBottom: '10px'}}
                 />

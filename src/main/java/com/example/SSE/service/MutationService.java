@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,51 +17,94 @@ import java.util.stream.Stream;
 @Service
 public class MutationService {
 
-    public List<Path> findModelFiles(String modelFolderPath) throws IOException {
-        Path startPath = Paths.get(modelFolderPath);
+    public List<Path> findModelFiles(String folderPath) throws IOException {
+        Path startPath = Paths.get(folderPath);
         try (Stream<Path> walk = Files.walk(startPath)) {
-            return walk.filter(Files::isRegularFile)
+            List<Path> cFiles = walk.filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().endsWith(".c"))
                     .collect(Collectors.toList());
+            if (cFiles.isEmpty()) {
+                throw new IllegalArgumentException("No .c files found in the directory: " + folderPath);
+            }
+            return cFiles;
         }
     }
 
-    public String applyMutation(Path modelFilePath, Path compileDatabasePath, Path outputDirectory, int maxMutants, String startFilename, int startLine, String endFilename, int endLine, int notMutatedLine, String mutantOperator) throws IOException {
-        if (Files.exists(modelFilePath)) {
-            ProcessBuilder processBuilder; // 외부 /home/user/MUSIC 프로그램을 실행하기 위함. 명령어와 인수들을 문자열 배열로 전달해야 함.
-            if (compileDatabasePath != null) { // 사용자로부터 compilation database file 경로를 받았으면 -p 옵션 추가
-                processBuilder = new ProcessBuilder(
-                        "/home/user/MUSIC",
-                        "-p", compileDatabasePath.toString(), // compilation database file 경로
-                        "-o", outputDirectory.toString(), // output directory 절대 경로
-                        "-l", String.valueOf(maxMutants), // mutants 최대 생성 개수
-                        "-rs", startFilename, String.valueOf(startLine), // mutant 생성 시작 line
-                        "-re", endFilename, String.valueOf(endLine), // mutant 생성 끝 line
-                        "-x", String.valueOf(notMutatedLine), // mutant 생성 제외할 lines
-                        "-m", mutantOperator, // 변이 연산자
-                        modelFilePath.toString()
-                );
-            } else { // 사용자로부터 compilation database file 경로를 받지 않았으면 없는 상태로 실행
-                processBuilder = new ProcessBuilder(
-                        "/home/user/MUSIC",
-                        "-p --", // compilation database file 없이 실행할 때 '--' 옵션 추가
-                        "-o", outputDirectory.toString(),
-                        "-l", String.valueOf(maxMutants),
-                        "-rs", startFilename, String.valueOf(startLine),
-                        "-re", endFilename, String.valueOf(endLine),
-                        "-x", String.valueOf(notMutatedLine),
-                        modelFilePath.toString()
-                );
-            }
-            processBuilder.directory(modelFilePath.getParent().toFile()); // #include와 같은 상대 경로가 포함된 경우, MUSIC이 폴더 구조를 유지하면서 올바르게 실행되도록
+    public String applyMutation(String folderPath, Path compileDatabasePath, Path outputDirectory, int maxMutants, String startFilename, int startLine, String endFilename, int endLine, int notMutatedLine, String mutantOperator) throws IOException {
 
-            // 프로세스 실행 및 결과 저장
-            Process process = processBuilder.start();
-            InputStream inputStream = process.getInputStream();
-            String result = new BufferedReader(new InputStreamReader(inputStream))
-                    .lines().collect(Collectors.joining("\n")); // 프로세스 결과를 문자열로 수집 후 result에 저장
-            return result;  // 변이 결과 반환
+        // STEP 1: 폴더에서 .c파일들 찾기
+        List<Path> modelFiles = findModelFiles(folderPath);
+
+        // STEP 2: 모든 .c 파일들을 wsl 경로로 변환 후 우분투 디렉토리에 복사
+        for (Path file : modelFiles) {
+            // wslpath 명령어 - 윈도우 inputfile 경로를 wsl 경로 형식으로 변환
+            Process wslPathProcess = new ProcessBuilder("wslpath", file.toString()).start();
+            String wslPath;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslPathProcess.getInputStream()))) {
+                wslPath = reader.readLine(); // wsl 경로를 읽음
+            }
+            if (wslPath == null || wslPath.isEmpty()) {
+                return "Error converting Windows path to WSL path.";
+            }
+
+            // cp 명령어 - wsl 경로 형식으로 바꾼 윈도우 파일을 우분투 디렉토리로 복사
+            Process copyWslPathProcess = new ProcessBuilder("cp",  wslPath, "/home/user/MUSIC/").start();
+            try {
+                int copyExitCode = copyWslPathProcess.waitFor();
+                if (copyExitCode != 0) {
+                    return "Error copying file to MUSIC directory.";
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // 스레드의 인터럽트 상태 복원
+                return "File copy process was interrupted.";
+            }
         }
-        return "C file not found";
+
+        // STEP 3: inputfilename1 inputfilename2... 파일 이름 리스트 생성
+        String inputfilenames = modelFiles.stream().map(file -> file.getFileName().toString()).collect(Collectors.joining(" "));
+
+        // -rs -re 값 설정
+        String defaultStartFilename = modelFiles.get(0).getFileName().toString(); // -rs filename의 default는 첫번째 .c 파일
+        String defaultEndFilename = modelFiles.get(modelFiles.size() - 1).getFileName().toString(); // -re filename의 default는 마지막 .c 파일
+        String startMutantFilename = startFilename != null ? startFilename + ":" + startLine : defaultStartFilename + ":0"; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
+        String endMutantFilename = endFilename != null ? endFilename + ":" + endLine : defaultEndFilename + ":" + Files.lines(modelFiles.get(modelFiles.size() - 1)).count(); // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
+
+        // 윈도우 outputDirectory 경로를 wsl 경로 형식으로 변환
+        Process wslOutputPathProcess = new ProcessBuilder("wslpath", outputDirectory.toString()).start();
+        String wslOutputDirectory;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslOutputPathProcess.getInputStream()))) {
+            wslOutputDirectory = reader.readLine();
+        }
+        if (wslOutputDirectory == null || wslOutputDirectory.isEmpty()) {
+            return "Error converting output directory path to WSL path.";
+        }
+
+        // STEP 4: MUSIC 명령어 실행
+        List<String> commands = new ArrayList<>();
+        commands.add("/home/user/MUSIC/music");
+        commands.add(inputfilenames);
+        if (compileDatabasePath != null) { // 사용자로부터 compilation database file 경로를 받았으면 -p 옵션 추가
+            commands.add("-p");
+            commands.add(compileDatabasePath.toString());
+        } else { // 사용자로부터 compilation database file 경로를 받지 않았으면 없는 상태로 실행
+            commands.add("-p --");
+        }
+        commands.add("-o " + wslOutputDirectory); // output directory 절대 경로. 윈도우 디렉토리에 저장됨.
+        commands.add("-l " +  String.valueOf(maxMutants)); // mutants 최대 생성 개수
+        commands.add("-rs " + startMutantFilename); // mutant 생성 시작 file, line. null이면 default로 첫 번째 c파일의 첫 번째줄
+        commands.add("-re " + endMutantFilename); // mutant 생성 끝 file, line. null이면 defaulat로 마지막 c파일의 마지막줄
+        commands.add("-x " + String.valueOf(notMutatedLine)); // mutant 생성 제외할 lines
+        commands.add("-m " + mutantOperator); // 변이 연산자
+
+        ProcessBuilder musicProcessBuilder = new ProcessBuilder(commands);
+        musicProcessBuilder.directory(Paths.get(folderPath).getParent().toFile()); // #include와 같은 상대 경로가 포함된 경우, MUSIC이 폴더 구조를 유지하면서 올바르게 실행되도록
+
+        // 프로세스 실행 및 결과 저장
+        Process musicProcess = musicProcessBuilder.start();
+        InputStream inputStream = musicProcess.getInputStream();
+        String result = new BufferedReader(new InputStreamReader(inputStream))
+                .lines().collect(Collectors.joining("\n")); // 프로세스 결과를 문자열로 수집 후 result에 저장
+        return result;  // 변이 결과 반환
     }
 }
+
