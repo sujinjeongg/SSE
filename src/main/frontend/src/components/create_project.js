@@ -16,7 +16,7 @@ function CreateProject() {
     const [startFilename, setStartFilename] = useState('');
     const [startLine, setStartLine] = useState(0);
     const [endFilename, setEndFilename] = useState('');
-    const [endLine, setEndLine] = useState(100);
+    const [endLine, setEndLine] = useState('');
     const [notMutatedLine, setNotMutatedLine] = useState(-1);
     const navigate = useNavigate();
 
@@ -71,23 +71,32 @@ function CreateProject() {
 
     // 서버로부터 변이 생성 관련 데이터들을 받아와 '/result'페이지에 데이터들을 전달
     const handleGenerate = async () => {
+        const requestData = {
+            folderPath,
+            compilePath: selectedOption.includes("-p") ? compileDatabasePath : null,
+            outputDirectory: selectedOption.includes("-o") ? outputDirectory : null,
+            maxMutants: selectedOption.includes("-l") ? maxMutants : 10,
+            startFilename: selectedOption.includes("-rs") ? startFilename : null,
+            startLine: selectedOption.includes("-rs") ? startLine : 0,
+            endFilename: selectedOption.includes("-re") ? endFilename : null,
+            endLine: endLine,
+            notMutatedLine: selectedOption.includes("-x") ? notMutatedLine : -1,
+            mutantOperator: selectedOperator.join(","),
+        };
+
         try {
-            const response = await axios.post('/api/mutation/apply', {
-                folderPath,
-                compilePath: compileDatabasePath,
-                outputDirectory,
-                maxMutants,
-                startFilename,
-                startLine,
-                endFilename,
-                endLine,
-                notMutatedLine,
-                mutantOperator: selectedOperator.join(','),
+            const response = await axios.post("/api/mutation/apply", requestData);
+            navigate("/result", {
+                state: {
+                    mutationResult: response.data,
+                    files: response.data.files || [],
+                },
             });
-            navigate('/result', { state: { mutationResult: response.data, files: response.data.files || [] /*변이 적용된 파일 리스트*/ } });
-        } catch (e) {
-            console.error(e);
-            navigate('/result', { state: { Error: e.response?.data || e.message } });
+        } catch (error) {
+            console.error("변이 생성 실패:", error);
+            navigate("/result", {
+                state: { Error: error.response?.data || error.message },
+            });
         }
     };
 

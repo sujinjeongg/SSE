@@ -1,19 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 
 function Result() {
-    const [files, setFiles] = useState([]);
-    const [selectedFile, setSelectedFile] = useState(null);
+    const location = useLocation();
 
-    // 서버에서 변이된 파일 목록 가져오기
-    useEffect(() => {
-        fetch("/api/mutation-results") // API 엔드포인트 호출
-            .then((response) => response.json())
-            .then((data) => {
-                setFiles(data);
-                if (data.length > 0) setSelectedFile(data[0]);
-            })
-            .catch((error) => console.error("Error fetching files:", error));
-    }, []);
+    const [files] = useState([
+        { id: 1, name: "input01_modified.c" },
+        { id: 2, name: "input02_modified.c" },
+        { id: 3, name: "input03_modified.c" },
+        { id: 4, name: "input04_modified.c" },
+    ]);
+    const [selectedFile, setSelectedFile] = useState(files[0]);
 
     const handleFileSelect = (file) => {
         setSelectedFile(file);
@@ -21,19 +18,30 @@ function Result() {
 
     return (
         <div style={styles.container}>
+            {/* 헤더 */}
             <div style={styles.header}>
-                <h3 style={styles.title}>Mutation Results</h3>
+                <div>
+                    <h3 style={styles.title}>Create New Project</h3>
+                </div>
+                <div>
+                    <i className="bi bi-house-fill" style={styles.icon}></i>
+                    <i className="bi bi-person-circle" style={styles.icon}></i>
+                    <i className="bi bi-gear" style={styles.icon}></i>
+                </div>
             </div>
+
+            {/* 콘텐츠 */}
             <div style={styles.content}>
+                {/* 사이드바 */}
                 <div style={styles.sidebar}>
                     <h3>Files</h3>
-                    {files.map((file, index) => (
+                    {files.map((file) => (
                         <div
-                            key={index}
+                            key={file.id}
                             style={{
                                 ...styles.fileItem,
                                 backgroundColor:
-                                    selectedFile && selectedFile.name === file.name
+                                    selectedFile.id === file.id
                                         ? "#d3d3d3"
                                         : "transparent",
                             }}
@@ -43,15 +51,43 @@ function Result() {
                         </div>
                     ))}
                 </div>
+
+                {/* 메인 콘텐츠 */}
                 <div style={styles.mainContent}>
-                    {selectedFile && (
-                        <div style={styles.card}>
-                            <div style={styles.cardHeader}>{selectedFile.name}</div>
-                            <pre style={styles.fileContent}>
-                                <code>{selectedFile.content}</code>
-                            </pre>
+                    <div style={styles.card}>
+                        <div style={styles.cardHeader}>
+                            {selectedFile.name}
                         </div>
-                    )}
+                        <div>
+                            <pre
+                                style={{
+                                    backgroundColor: "#f8f9fa",
+                                    padding: "10px",
+                                    height: "400px",
+                                    overflowY: "scroll",
+                                }}
+                            >
+                                <code>
+                                    {`#include <stdio.h>\nint main() {\n  printf("Hello, World!\\n");\n  return 0;\n}`}
+                                </code>
+                            </pre>
+                            <button
+                                style={{ ...styles.button, ...styles.primaryButton }}
+                            >
+                                Edit
+                            </button>
+                            <button
+                                style={{ ...styles.button, ...styles.secondaryButton }}
+                            >
+                                Log Record
+                            </button>
+                            <button
+                                style={{ ...styles.button, ...styles.primaryButton }}
+                            >
+                                Download
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -59,15 +95,81 @@ function Result() {
 }
 
 const styles = {
-    container: { display: "flex", flexDirection: "column" },
-    header: { padding: "10px", borderBottom: "1px solid #ccc" },
-    content: { display: "flex", marginTop: "10px" },
-    sidebar: { width: "200px", padding: "10px", borderRight: "1px solid #ccc" },
-    fileItem: { padding: "5px", cursor: "pointer" },
-    mainContent: { flex: 1, padding: "10px" },
-    card: { padding: "10px", border: "1px solid #ccc" },
-    cardHeader: { fontWeight: "bold", marginBottom: "10px" },
-    fileContent: { backgroundColor: "#f8f9fa", padding: "10px", height: "400px", overflowY: "scroll" },
+    container: {
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        fontFamily: "Arial, sans-serif",
+    },
+    header: {
+        backgroundColor: "#000",
+        color: "white",
+        padding: "35px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    icon: {
+        fontSize: "2rem",
+        margin: "0 15px",
+        cursor: "pointer",
+    },
+    title: {
+        margin: "30px 0 0 0",
+        fontSize: "1.5rem",
+        fontWeight: "bold",
+    },
+    content: {
+        display: "flex",
+        flex: 1,
+        overflow: "hidden",
+    },
+    sidebar: {
+        width: "20%",
+        backgroundColor: "#f8f9fa",
+        padding: "20px",
+        boxShadow: "2px 0 5px rgba(0, 0, 0, 0.1)",
+        overflowY: "auto",
+    },
+    fileItem: {
+        padding: "10px 15px",
+        margin: "5px 0",
+        borderRadius: "5px",
+        cursor: "pointer",
+    },
+    mainContent: {
+        flex: 1,
+        padding: "20px",
+        backgroundColor: "#fff",
+        overflowY: "auto",
+    },
+    card: {
+        border: "1px solid #ddd",
+        borderRadius: "5px",
+        padding: "15px",
+        marginBottom: "20px",
+    },
+    cardHeader: {
+        fontWeight: "bold",
+        borderBottom: "1px solid #ddd",
+        paddingBottom: "10px",
+        marginBottom: "10px",
+    },
+    button: {
+        marginRight: "10px",
+        padding: "8px 15px",
+        border: "none",
+        borderRadius: "5px",
+        cursor: "pointer",
+    },
+    primaryButton: {
+        backgroundColor: "#007bff",
+        color: "#fff",
+    },
+    secondaryButton: {
+        backgroundColor: "#6c757d",
+        color: "#fff",
+    },
 };
 
 export default Result;
