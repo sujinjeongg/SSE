@@ -10,7 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,7 +32,7 @@ public class MutationService {
         }
     }
 
-    public String applyMutation(String folderPath, Path compileDatabasePath, Path outputDirectory, int maxMutants, String startFilename, int startLine, String endFilename, int endLine, int notMutatedLine, String mutantOperator) throws IOException {
+    public List<Map<String, String>> applyMutation(String folderPath, Path compileDatabasePath, Path outputDirectory, int maxMutants, String startFilename, int startLine, String endFilename, int endLine, int notMutatedLine, String mutantOperator) throws IOException {
 
         // STEP 1: 폴더에서 .c파일들 찾기
         List<Path> modelFiles = findModelFiles(folderPath);
@@ -44,7 +46,7 @@ public class MutationService {
                 wslPath = reader.readLine(); // wsl 경로를 읽음
             }
             if (wslPath == null || wslPath.isEmpty()) {
-                return "Error converting Windows path to WSL path.";
+                throw new IOException("Error converting Windows path to WSL path.");
             }
 
             // cp 명령어 - wsl 경로 형식으로 바꾼 윈도우 파일을 우분투 디렉토리로 복사
@@ -52,11 +54,11 @@ public class MutationService {
             try {
                 int copyExitCode = copyWslPathProcess.waitFor();
                 if (copyExitCode != 0) {
-                    return "Error copying file to MUSIC directory.";
+                    throw new IOException("Error copying file to MUSIC directory.");
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt(); // 스레드의 인터럽트 상태 복원
-                return "File copy process was interrupted.";
+                throw new IOException("File copy process was interrupted.");
             }
         }
 
@@ -76,7 +78,7 @@ public class MutationService {
             wslOutputDirectory = reader.readLine();
         }
         if (wslOutputDirectory == null || wslOutputDirectory.isEmpty()) {
-            return "Error converting output directory path to WSL path.";
+            throw new IOException("Error converting output directory path to WSL path.");
         }
 
         // STEP 4: MUSIC 명령어 실행
@@ -99,12 +101,35 @@ public class MutationService {
         ProcessBuilder musicProcessBuilder = new ProcessBuilder(commands);
         musicProcessBuilder.directory(Paths.get(folderPath).getParent().toFile()); // #include와 같은 상대 경로가 포함된 경우, MUSIC이 폴더 구조를 유지하면서 올바르게 실행되도록
 
-        // 프로세스 실행 및 결과 저장
+        // 프로세스 실행
         Process musicProcess = musicProcessBuilder.start();
         InputStream inputStream = musicProcess.getInputStream();
-        String result = new BufferedReader(new InputStreamReader(inputStream))
-                .lines().collect(Collectors.joining("\n")); // 프로세스 결과를 문자열로 수집 후 result에 저장
-        return result;  // 변이 결과 반환
+        try {
+            int exitCode = musicProcess.waitFor();
+            if (exitCode != 0) {
+                throw new IOException("MUSIC process failed with exit code: " + exitCode);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("MUSIC process was interrupted.");
+        }
+
+        // 변이된 파일 이름들, 코드 반환
+        try (Stream<Path> outputFiles = Files.list(outputDirectory)) {
+            return outputFiles
+                    .filter(p -> p.getFileName().toString().endsWith(".c"))
+                    .map(p -> {
+                        Map<String, String> fileInfo = new HashMap<>();
+                        fileInfo.put("name", p.getFileName().toString());
+                        try {
+                            fileInfo.put("content", Files.readString(p));
+                        } catch (IOException e) {
+                            fileInfo.put("content", "Error reading file.");
+                        }
+                        return fileInfo;
+                    })
+                    .collect(Collectors.toList());
+        }
     }
 }
 
