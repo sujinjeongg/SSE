@@ -14,9 +14,9 @@ function CreateProject() {
     const [outputDirectory, setOutputDirectory] = useState('');
     const [maxMutants, setMaxMutants] = useState('');
     const [startFilename, setStartFilename] = useState('');
-    const [startLine, setStartLine] = useState(0);
+    const [startLine, setStartLine] = useState('');
     const [endFilename, setEndFilename] = useState('');
-    const [endLine, setEndLine] = useState('');
+    const [endLine, setEndLine] = useState(0);
     const [notMutatedLine, setNotMutatedLine] = useState(-1);
     const navigate = useNavigate();
 
@@ -54,7 +54,6 @@ function CreateProject() {
         };
     }, [folderPath]);
 
-
     // 이미 선택된 옵션을 다시 클릭하면 선택 해제됨
     const handleOptionChange = (e) => {
         const value = e.target.value;
@@ -69,17 +68,17 @@ function CreateProject() {
             prev.includes(value) ? prev.filter((opr) => opr !==value) : [...prev, value]);
     };
 
-    // 서버로부터 변이 생성 관련 데이터들을 받아와 '/result'페이지에 데이터들을 전달
+    // 사용자가 입력한 옵션 데이터들을 서버에 전달 후 변이 적용된 응답 데이터를 '/result' 페이지에 전달
     const handleGenerate = async () => {
         const requestData = {
             folderPath,
             compilePath: selectedOption.includes("-p") ? compileDatabasePath : null,
             outputDirectory: selectedOption.includes("-o") ? outputDirectory : null,
-            maxMutants: selectedOption.includes("-l") ? maxMutants : 10,
+            maxMutants: selectedOption.includes("-l") ? maxMutants : 0,
             startFilename: selectedOption.includes("-rs") ? startFilename : null,
-            startLine: selectedOption.includes("-rs") ? startLine : 0,
+            startLine: startLine>0 ? startLine : 0,
             endFilename: selectedOption.includes("-re") ? endFilename : null,
-            endLine: endLine,
+            endLine: endLine!=0 ? endLine : 0,
             notMutatedLine: selectedOption.includes("-x") ? notMutatedLine : -1,
             mutantOperator: selectedOperator.join(","),
         };
@@ -88,8 +87,8 @@ function CreateProject() {
             const response = await axios.post("/api/mutation/apply", requestData);
             navigate("/result", {
                 state: {
-                    mutationResult: response.data,
-                    files: response.data.files || [],
+                    outputLog: response.data.outputLog, // 출력 로그가 저장된 필드
+                    outputFiles: response.data.outputFiles || [], // 파일 이름들, 코드 내용이 저장된 필드
                 },
             });
         } catch (error) {

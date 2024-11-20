@@ -1,16 +1,18 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import { useLocation } from "react-router-dom";
 
 function Result() {
     const location = useLocation();
 
-    const [files] = useState([
-        { id: 1, name: "input01_modified.c" },
-        { id: 2, name: "input02_modified.c" },
-        { id: 3, name: "input03_modified.c" },
-        { id: 4, name: "input04_modified.c" },
-    ]);
-    const [selectedFile, setSelectedFile] = useState(files[0]);
+    const [outputFiles, setOutputFiles] = useState([]);
+    const [selectedFile, setSelectedFile] = useState(null);
+
+    useEffect(() => {
+        if (location.state && location.state.outputFiles) {
+            setOutputFiles(location.state.outputFiles);
+            setSelectedFile(location.state.outputFiles[0]);
+        }
+    }, [location.state]);
 
     const handleFileSelect = (file) => {
         setSelectedFile(file);
@@ -35,30 +37,33 @@ function Result() {
                 {/* 사이드바 */}
                 <div style={styles.sidebar}>
                     <h3>Files</h3>
-                    {files.map((file) => (
-                        <div
-                            key={file.id}
-                            style={{
-                                ...styles.fileItem,
-                                backgroundColor:
-                                    selectedFile.id === file.id
-                                        ? "#d3d3d3"
-                                        : "transparent",
-                            }}
-                            onClick={() => handleFileSelect(file)}
-                        >
-                            {file.name}
-                        </div>
-                    ))}
+                    {outputFiles.length>0 ? (
+                        outputFiles.map((file) => (
+                            <div
+                                key={file.name}
+                                style={{
+                                    ...styles.fileItem,
+                                    backgroundColor:
+                                        selectedFile.name === file.name
+                                            ? "#d3d3d3"
+                                            : "transparent",
+                                }}
+                                onClick={() => handleFileSelect(file)}
+                            >
+                                {file.name}
+                            </div>
+                        ))
+                    ) : ( <p>No files available.</p> )}
                 </div>
 
                 {/* 메인 콘텐츠 */}
                 <div style={styles.mainContent}>
-                    <div style={styles.card}>
-                        <div style={styles.cardHeader}>
-                            {selectedFile.name}
-                        </div>
-                        <div>
+                    {selectedFile ? (
+                        <div style={styles.card}>
+                            <div style={styles.cardHeader}>
+                                {selectedFile.name}
+                            </div>
+                            <div>
                             <pre
                                 style={{
                                     backgroundColor: "#f8f9fa",
@@ -67,28 +72,27 @@ function Result() {
                                     overflowY: "scroll",
                                 }}
                             >
-                                <code>
-                                    {`#include <stdio.h>\nint main() {\n  printf("Hello, World!\\n");\n  return 0;\n}`}
-                                </code>
+                                <code> {selectedFile.content} </code>
                             </pre>
-                            <button
-                                style={{ ...styles.button, ...styles.primaryButton }}
-                            >
-                                Edit
-                            </button>
-                            <button
-                                style={{ ...styles.button, ...styles.secondaryButton }}
-                            >
-                                Log Record
-                            </button>
-                            <button
-                                style={{ ...styles.button, ...styles.primaryButton }}
-                            >
-                                Download
-                            </button>
+                                <button
+                                    style={{ ...styles.button, ...styles.primaryButton }}
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    style={{ ...styles.button, ...styles.secondaryButton }}
+                                >
+                                    Log Record
+                                </button>
+                                <button
+                                    style={{ ...styles.button, ...styles.primaryButton }}
+                                >
+                                    Download
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                        ) : ( <p>Please select a file to view</p> )}
+                        </div>
             </div>
         </div>
     );

@@ -1,5 +1,6 @@
 package com.example.SSE.service;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -50,7 +51,7 @@ public class MutationService {
             }
 
             // cp 명령어 - wsl 경로 형식으로 바꾼 윈도우 파일을 우분투 디렉토리로 복사
-            Process copyWslPathProcess = new ProcessBuilder("cp",  wslPath, "/home/user/MUSIC/").start();
+            Process copyWslPathProcess = new ProcessBuilder("cp", wslPath, "/home/user/MUSIC/").start();
             try {
                 int copyExitCode = copyWslPathProcess.waitFor();
                 if (copyExitCode != 0) {
@@ -69,7 +70,8 @@ public class MutationService {
         String defaultStartFilename = modelFiles.get(0).getFileName().toString(); // -rs filename의 default는 첫번째 .c 파일
         String defaultEndFilename = modelFiles.get(modelFiles.size() - 1).getFileName().toString(); // -re filename의 default는 마지막 .c 파일
         String startMutantFilename = startFilename != null ? startFilename + ":" + startLine : defaultStartFilename + ":0"; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
-        String endMutantFilename = endFilename != null ? endFilename + ":" + endLine : defaultEndFilename + ":" + Files.lines(modelFiles.get(modelFiles.size() - 1)).count(); // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
+        int endMutantLine = endLine != 0 ? endLine : (int) Files.lines(modelFiles.get(modelFiles.size() - 1)).count();
+        String endMutantFilename = endFilename != null ? endFilename + ":" + endMutantLine : defaultEndFilename + ":" + endMutantLine; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
 
         // 윈도우 outputDirectory 경로를 wsl 경로 형식으로 변환
         String wslOutputDirectory;
@@ -106,7 +108,7 @@ public class MutationService {
             commands.add("-o " + wslOutputDirectory); // output directory 절대 경로. 윈도우 디렉토리에 저장됨.
         }
         if (maxMutants > 0) {
-            commands.add("-l " +  String.valueOf(maxMutants)); // mutants 최대 생성 개수
+            commands.add("-l " + String.valueOf(maxMutants)); // mutants 최대 생성 개수
         }
         commands.add("-rs " + startMutantFilename); // mutant 생성 시작 file, line. null이면 default로 첫 번째 c파일의 첫 번째줄
         commands.add("-re " + endMutantFilename); // mutant 생성 끝 file, line. null이면 defaulat로 마지막 c파일의 마지막줄
@@ -120,8 +122,8 @@ public class MutationService {
 
         // 프로세스 실행 및 출력 로그 출력
         Process musicProcess = musicProcessBuilder.start();
+        StringBuilder outputLog = new StringBuilder();
         try (BufferedReader outputReader = new BufferedReader(new InputStreamReader(musicProcess.getInputStream()))) {
-            StringBuilder outputLog = new StringBuilder();
             String line;
             while ((line = outputReader.readLine()) != null) {
                 outputLog.append(line).append("\n");
@@ -131,10 +133,10 @@ public class MutationService {
         }
 
         // 변이된 파일 이름들, 코드 반환
+        List<Map<String, String>> outputFilesList = new ArrayList<>();
         try (Stream<Path> outputFiles = Files.list(outputDirectory)) {
-            return outputFiles
-                    .filter(p -> p.getFileName().toString().endsWith(".c"))
-                    .map(p -> {
+            outputFiles.filter(p -> p.getFileName().toString().endsWith(".c"))
+                    .forEach(p -> {
                         Map<String, String> fileInfo = new HashMap<>();
                         fileInfo.put("name", p.getFileName().toString());
                         try {
@@ -142,10 +144,10 @@ public class MutationService {
                         } catch (IOException e) {
                             fileInfo.put("content", "Error reading file.");
                         }
-                        return fileInfo;
-                    })
-                    .collect(Collectors.toList());
+                        outputFilesList.add(fileInfo);
+                    });
         }
+        return outputFilesList;
     }
 }
 
