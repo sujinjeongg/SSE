@@ -27,7 +27,7 @@ public class MutationController {
     @PostMapping("/apply")
     public ResponseEntity<?> applyMutation(@RequestParam String folderPath, @RequestParam(required = false) Path compilePath, @RequestParam(required = false) Path outputDirectory, @RequestParam(required = false) int maxMutants, @RequestParam String startFilename, @RequestParam(required = false) int startLine, @RequestParam String endFilename, @RequestParam(required = false) int endLine, @RequestParam(required = false) int notMutatedLine, @RequestParam String mutantOperator) throws IOException {
         try {
-            // 변이 생성 서비스 호출
+            // MutationService 호출 후 결과 반환
             List<Map<String, String>> mutatedFiles = (List<Map<String, String>>) mutationService.applyMutation(
                     folderPath, compilePath, outputDirectory, maxMutants,
                     startFilename, startLine, endFilename, endLine, notMutatedLine, mutantOperator

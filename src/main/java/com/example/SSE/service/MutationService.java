@@ -72,13 +72,24 @@ public class MutationService {
         String endMutantFilename = endFilename != null ? endFilename + ":" + endLine : defaultEndFilename + ":" + Files.lines(modelFiles.get(modelFiles.size() - 1)).count(); // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
 
         // 윈도우 outputDirectory 경로를 wsl 경로 형식으로 변환
-        Process wslOutputPathProcess = new ProcessBuilder("wslpath", outputDirectory.toString()).start();
         String wslOutputDirectory;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslOutputPathProcess.getInputStream()))) {
-            wslOutputDirectory = reader.readLine();
-        }
-        if (wslOutputDirectory == null || wslOutputDirectory.isEmpty()) {
-            throw new IOException("Error converting output directory path to WSL path.");
+        if (outputDirectory != null) { // 사용자가 outputDirectory를 입력한 경우
+            Process wslOutputPathProcess = new ProcessBuilder("wslpath", outputDirectory.toString()).start();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslOutputPathProcess.getInputStream()))) {
+                wslOutputDirectory = reader.readLine();
+            }
+            if (wslOutputDirectory == null || wslOutputDirectory.isEmpty()) {
+                throw new IOException("Error converting output directory path to WSL path.");
+            }
+        } else { // 사용자가 outputDirectory를 입력하지 않은 경우 default로 사용자의 현재 디렉토리를 outputDirectory로 설정
+            String currentWindowsDirectory = System.getProperty("user.dir"); // 사용자의 현재 디렉토리를 가져옴
+            Process wslOutputPathProcess = new ProcessBuilder("wslpath", currentWindowsDirectory).start();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslOutputPathProcess.getInputStream()))) {
+                wslOutputDirectory = reader.readLine();
+            }
+            if (wslOutputDirectory == null || wslOutputDirectory.isEmpty()) {
+                throw new IOException("Error converting current directory path to WSL path.");
+            }
         }
 
         // STEP 4: MUSIC 명령어 실행
@@ -91,27 +102,32 @@ public class MutationService {
         } else { // 사용자로부터 compilation database file 경로를 받지 않았으면 없는 상태로 실행
             commands.add("-p --");
         }
-        commands.add("-o " + wslOutputDirectory); // output directory 절대 경로. 윈도우 디렉토리에 저장됨.
-        commands.add("-l " +  String.valueOf(maxMutants)); // mutants 최대 생성 개수
+        if (outputDirectory != null) {
+            commands.add("-o " + wslOutputDirectory); // output directory 절대 경로. 윈도우 디렉토리에 저장됨.
+        }
+        if (maxMutants > 0) {
+            commands.add("-l " +  String.valueOf(maxMutants)); // mutants 최대 생성 개수
+        }
         commands.add("-rs " + startMutantFilename); // mutant 생성 시작 file, line. null이면 default로 첫 번째 c파일의 첫 번째줄
         commands.add("-re " + endMutantFilename); // mutant 생성 끝 file, line. null이면 defaulat로 마지막 c파일의 마지막줄
-        commands.add("-x " + String.valueOf(notMutatedLine)); // mutant 생성 제외할 lines
+        if (notMutatedLine > 0) {
+            commands.add("-x " + String.valueOf(notMutatedLine)); // mutant 생성 제외할 lines
+        }
         commands.add("-m " + mutantOperator); // 변이 연산자
 
         ProcessBuilder musicProcessBuilder = new ProcessBuilder(commands);
         musicProcessBuilder.directory(Paths.get(folderPath).getParent().toFile()); // #include와 같은 상대 경로가 포함된 경우, MUSIC이 폴더 구조를 유지하면서 올바르게 실행되도록
 
-        // 프로세스 실행
+        // 프로세스 실행 및 출력 로그 출력
         Process musicProcess = musicProcessBuilder.start();
-        InputStream inputStream = musicProcess.getInputStream();
-        try {
-            int exitCode = musicProcess.waitFor();
-            if (exitCode != 0) {
-                throw new IOException("MUSIC process failed with exit code: " + exitCode);
+        try (BufferedReader outputReader = new BufferedReader(new InputStreamReader(musicProcess.getInputStream()))) {
+            StringBuilder outputLog = new StringBuilder();
+            String line;
+            while ((line = outputReader.readLine()) != null) {
+                outputLog.append(line).append("\n");
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("MUSIC process was interrupted.");
+
+            System.out.println("MUSIC process output:\n" + outputLog);
         }
 
         // 변이된 파일 이름들, 코드 반환
