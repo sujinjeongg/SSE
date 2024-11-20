@@ -33,13 +33,14 @@ public class MutationService {
         }
     }
 
-    public List<Map<String, String>> applyMutation(String folderPath, Path compileDatabasePath, Path outputDirectory, int maxMutants, String startFilename, int startLine, String endFilename, int endLine, int notMutatedLine, String mutantOperator) throws IOException {
+    public List<Map<String, String>> applyMutation(String folderPath, Path compileDatabasePath, Path outputDirectory, int maxMutants, String startFilename, int startLine, String endFilename, int endLine, int notMutatedLine, String mutantOperator) throws IOException, InterruptedException {
 
         // STEP 1: 폴더에서 .c파일들 찾기
         List<Path> modelFiles = findModelFiles(folderPath);
 
         // STEP 2: 모든 .c 파일들을 wsl 경로로 변환 후 우분투 디렉토리에 복사
         for (Path file : modelFiles) {
+            System.out.println(file.toString());
             // wslpath 명령어 - 윈도우 inputfile 경로를 wsl 경로 형식으로 변환
             Process wslPathProcess = new ProcessBuilder("wslpath", file.toString()).start();
             String wslPath;
@@ -130,6 +131,15 @@ public class MutationService {
             }
 
             System.out.println("MUSIC process output:\n" + outputLog);
+        }
+
+        // (임시) Process 실행 결과 검사 추가 , Output 디렉토리 검사
+        int exitCode = musicProcess.waitFor();
+        if (exitCode != 0) {
+            throw new IOException("MUSIC process failed with exit code " + exitCode);
+        }
+        if (outputDirectory == null || !Files.exists(outputDirectory)) {
+            throw new IllegalArgumentException("Invalid output directory: " + outputDirectory);
         }
 
         // 변이된 파일 이름들, 코드 반환

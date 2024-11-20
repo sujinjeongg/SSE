@@ -84,7 +84,8 @@ function CreateProject() {
         };
 
         try {
-            const response = await axios.post("/api/mutation/apply", requestData);
+            const response = await axios.post("http://localhost:3000/api/mutation/apply", requestData, {
+                headers: { "Content-Type": "application/json" },});console.log('Success:', response.data);
             navigate("/result", {
                 state: {
                     outputLog: response.data.outputLog, // 출력 로그가 저장된 필드
