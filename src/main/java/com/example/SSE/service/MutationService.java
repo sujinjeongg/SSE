@@ -1,11 +1,9 @@
 package com.example.SSE.service;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,6 +41,14 @@ public class MutationService {
             System.out.println(file.toString());
             // wslpath 명령어 - 윈도우 inputfile 경로를 wsl 경로 형식으로 변환
             Process wslPathProcess = new ProcessBuilder("wslpath", file.toString()).start();
+            int exitCode = wslPathProcess.waitFor(); // 프로세스 종료 코드 확인
+            if (exitCode != 0) {
+                try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(wslPathProcess.getErrorStream()))) {
+                    String errorMessage = errorReader.lines().collect(Collectors.joining("\n"));
+                    System.err.println("Error from wslpath: " + errorMessage);
+                }
+                throw new IOException("Error converting Windows path to WSL path. Exit code: " + exitCode);
+            }
             String wslPath;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslPathProcess.getInputStream()))) {
                 wslPath = reader.readLine(); // wsl 경로를 읽음
