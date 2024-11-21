@@ -24,7 +24,7 @@ function CreateProject() {
     useEffect(() => {
         if (!folderPath) return; // 폴더 경로가 설정되지 않은 경우 실행하지 않음
 
-        const socket = new WebSocket("wss://localhost:8082/folder");
+        const socket = new WebSocket("wss://localhost:8083/folder");
 
         // WebSocket 연결이 열리면 호출됨
         socket.onopen = () => {

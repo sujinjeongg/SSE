@@ -39,8 +39,9 @@ public class MutationService {
         // STEP 2: 모든 .c 파일들을 wsl 경로로 변환 후 우분투 디렉토리에 복사
         for (Path file : modelFiles) {
             System.out.println(file.toString());
+
             // wslpath 명령어 - 윈도우 inputfile 경로를 wsl 경로 형식으로 변환
-            Process wslPathProcess = new ProcessBuilder("wslpath", file.toString()).start();
+            Process wslPathProcess = new ProcessBuilder("wslpath", "\"" + file.toString() + "\"").start();
             int exitCode = wslPathProcess.waitFor(); // 프로세스 종료 코드 확인
             if (exitCode != 0) {
                 try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(wslPathProcess.getErrorStream()))) {
@@ -58,7 +59,7 @@ public class MutationService {
             }
 
             // cp 명령어 - wsl 경로 형식으로 바꾼 윈도우 파일을 우분투 디렉토리로 복사
-            Process copyWslPathProcess = new ProcessBuilder("cp", wslPath, "/home/user/MUSIC/").start();
+            Process copyWslPathProcess = new ProcessBuilder("cp", "\"" + wslPath + "\"", "/home/user/MUSIC/").start();
             try {
                 int copyExitCode = copyWslPathProcess.waitFor();
                 if (copyExitCode != 0) {
@@ -83,7 +84,7 @@ public class MutationService {
         // 윈도우 outputDirectory 경로를 wsl 경로 형식으로 변환
         String wslOutputDirectory;
         if (outputDirectory != null) { // 사용자가 outputDirectory를 입력한 경우
-            Process wslOutputPathProcess = new ProcessBuilder("wslpath", outputDirectory.toString()).start();
+            Process wslOutputPathProcess = new ProcessBuilder("wslpath", "\"" + outputDirectory.toString() + "\"").start();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslOutputPathProcess.getInputStream()))) {
                 wslOutputDirectory = reader.readLine();
             }
@@ -92,7 +93,7 @@ public class MutationService {
             }
         } else { // 사용자가 outputDirectory를 입력하지 않은 경우 default로 사용자의 현재 디렉토리를 outputDirectory로 설정
             String currentWindowsDirectory = System.getProperty("user.dir"); // 사용자의 현재 디렉토리를 가져옴
-            Process wslOutputPathProcess = new ProcessBuilder("wslpath", currentWindowsDirectory).start();
+            Process wslOutputPathProcess = new ProcessBuilder("wslpath", "\"" + currentWindowsDirectory + "\"").start();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslOutputPathProcess.getInputStream()))) {
                 wslOutputDirectory = reader.readLine();
             }
