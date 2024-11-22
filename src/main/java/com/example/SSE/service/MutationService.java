@@ -18,6 +18,13 @@ import java.util.stream.Stream;
 @Service
 public class MutationService {
 
+    public static void main(String[] args) throws IOException, InterruptedException {
+        Process wslPathProcess = new ProcessBuilder("wslpath", "C:\\path\\to\\file.txt").start();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslPathProcess.getInputStream()))) {
+            System.out.println(reader.readLine());
+        }
+    }
+
     public List<Path> findModelFiles(String folderPath) throws IOException {
         Path startPath = Paths.get(folderPath);
         try (Stream<Path> walk = Files.walk(startPath)) {
@@ -46,9 +53,8 @@ public class MutationService {
             if (exitCode != 0) {
                 try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(wslPathProcess.getErrorStream()))) {
                     String errorMessage = errorReader.lines().collect(Collectors.joining("\n"));
-                    System.err.println("Error from wslpath: " + errorMessage);
+                    throw new IOException("Error converting Windows path to WSL path. Exit code: " + exitCode + "\nDetails: " + errorMessage);
                 }
-                throw new IOException("Error converting Windows path to WSL path. Exit code: " + exitCode);
             }
             String wslPath;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslPathProcess.getInputStream()))) {
@@ -145,7 +151,7 @@ public class MutationService {
         if (exitCode != 0) {
             throw new IOException("MUSIC process failed with exit code " + exitCode);
         }
-        if (outputDirectory == null || !Files.exists(outputDirectory)) {
+        if (outputDirectory == null || !Files.isDirectory(outputDirectory)) {
             throw new IllegalArgumentException("Invalid output directory: " + outputDirectory);
         }
 
