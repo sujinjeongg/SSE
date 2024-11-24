@@ -1,9 +1,11 @@
 package com.example.SSE.service;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,13 +19,6 @@ import java.util.stream.Stream;
 
 @Service
 public class MutationService {
-
-    public static void main(String[] args) throws IOException, InterruptedException {
-        Process wslPathProcess = new ProcessBuilder("wslpath", "C:\\path\\to\\file.txt").start();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslPathProcess.getInputStream()))) {
-            System.out.println(reader.readLine());
-        }
-    }
 
     public List<Path> findModelFiles(String folderPath) throws IOException {
         Path startPath = Paths.get(folderPath);
@@ -46,26 +41,12 @@ public class MutationService {
         // STEP 2: 모든 .c 파일들을 wsl 경로로 변환 후 우분투 디렉토리에 복사
         for (Path file : modelFiles) {
             System.out.println(file.toString());
-
-            // wslpath 명령어 - 윈도우 inputfile 경로를 wsl 경로 형식으로 변환
-            Process wslPathProcess = new ProcessBuilder("wslpath", "\"" + file.toString() + "\"").start();
-            int exitCode = wslPathProcess.waitFor(); // 프로세스 종료 코드 확인
-            if (exitCode != 0) {
-                try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(wslPathProcess.getErrorStream()))) {
-                    String errorMessage = errorReader.lines().collect(Collectors.joining("\n"));
-                    throw new IOException("Error converting Windows path to WSL path. Exit code: " + exitCode + "\nDetails: " + errorMessage);
-                }
-            }
-            String wslPath;
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslPathProcess.getInputStream()))) {
-                wslPath = reader.readLine(); // wsl 경로를 읽음
-            }
-            if (wslPath == null || wslPath.isEmpty()) {
-                throw new IOException("Error converting Windows path to WSL path.");
-            }
+            // 윈도우 inputfile 경로를 wsl 경로 형식으로 변환
+            String windowsPath = file.toString();
+            String wslPath = windowsPath.replace("\\", "/").replace("C:", "/mnt/c");
 
             // cp 명령어 - wsl 경로 형식으로 바꾼 윈도우 파일을 우분투 디렉토리로 복사
-            Process copyWslPathProcess = new ProcessBuilder("cp", "\"" + wslPath + "\"", "/home/user/MUSIC/").start();
+            Process copyWslPathProcess = new ProcessBuilder("cp", wslPath, "/home/user/MUSIC/").start();
             try {
                 int copyExitCode = copyWslPathProcess.waitFor();
                 if (copyExitCode != 0) {
@@ -88,25 +69,10 @@ public class MutationService {
         String endMutantFilename = endFilename != null ? endFilename + ":" + endMutantLine : defaultEndFilename + ":" + endMutantLine; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
 
         // 윈도우 outputDirectory 경로를 wsl 경로 형식으로 변환
-        String wslOutputDirectory;
-        if (outputDirectory != null) { // 사용자가 outputDirectory를 입력한 경우
-            Process wslOutputPathProcess = new ProcessBuilder("wslpath", "\"" + outputDirectory.toString() + "\"").start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslOutputPathProcess.getInputStream()))) {
-                wslOutputDirectory = reader.readLine();
-            }
-            if (wslOutputDirectory == null || wslOutputDirectory.isEmpty()) {
-                throw new IOException("Error converting output directory path to WSL path.");
-            }
-        } else { // 사용자가 outputDirectory를 입력하지 않은 경우 default로 사용자의 현재 디렉토리를 outputDirectory로 설정
-            String currentWindowsDirectory = System.getProperty("user.dir"); // 사용자의 현재 디렉토리를 가져옴
-            Process wslOutputPathProcess = new ProcessBuilder("wslpath", "\"" + currentWindowsDirectory + "\"").start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(wslOutputPathProcess.getInputStream()))) {
-                wslOutputDirectory = reader.readLine();
-            }
-            if (wslOutputDirectory == null || wslOutputDirectory.isEmpty()) {
-                throw new IOException("Error converting current directory path to WSL path.");
-            }
-        }
+        String windowsOutputDirectory = outputDirectory.toString();
+        String wslOutputDirectory = windowsOutputDirectory.replace("\\", "/").replace("C:", "/mnt/c");
+        String windowsCurrentDirectory = System.getProperty("user.dir"); // 사용자의 현재 디렉토리를 가져옴
+        String wslCurrentDirectory = windowsCurrentDirectory.replace("\\", "/").replace("C:", "/mnt/c");
 
         // STEP 4: MUSIC 명령어 실행
         List<String> commands = new ArrayList<>();
@@ -120,6 +86,8 @@ public class MutationService {
         }
         if (outputDirectory != null) {
             commands.add("-o " + wslOutputDirectory); // output directory 절대 경로. 윈도우 디렉토리에 저장됨.
+        } else { // 사용자로부터 ouputDirectory 경로를 받지 않았으면 사용자의 현재 디렉토리를 outputDiretory로 설정
+            commands.add("-o " + wslCurrentDirectory);
         }
         if (maxMutants > 0) {
             commands.add("-l " + String.valueOf(maxMutants)); // mutants 최대 생성 개수
@@ -151,7 +119,7 @@ public class MutationService {
         if (exitCode != 0) {
             throw new IOException("MUSIC process failed with exit code " + exitCode);
         }
-        if (outputDirectory == null || !Files.isDirectory(outputDirectory)) {
+        if (outputDirectory == null || !Files.exists(outputDirectory)) {
             throw new IllegalArgumentException("Invalid output directory: " + outputDirectory);
         }
 

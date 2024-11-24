@@ -16,10 +16,6 @@ import java.util.Map;
 @RequestMapping("/api/mutation")
 public class MutationController {
 
-    public static void main(String[] args) {
-        System.out.println(System.getenv("PATH"));
-    }
-
     private final MutationService mutationService;
 
     @Autowired
