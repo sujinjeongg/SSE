@@ -238,7 +238,7 @@ function CreateProject() {
             <div className="container-fluid" style={{position: 'absolute', left: '1150px', top: '330px'}}>
                 <label>Select operators:</label>
                 <select multiple={true} value={selectedOperator}>
-                    {['oaan', 'obbn', 'ossf', 'oaab', 'vscr'].map((option) => (
+                    {['ocor', 'olbn', 'osaa', 'orrn', 'vlpr'].map((option) => (
                         <option
                             key={option}
                             value={option}

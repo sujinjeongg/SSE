@@ -1,11 +1,9 @@
 package com.example.SSE.service;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,13 +38,14 @@ public class MutationService {
 
         // STEP 2: 모든 .c 파일들을 wsl 경로로 변환 후 우분투 디렉토리에 복사
         for (Path file : modelFiles) {
-            System.out.println(file.toString());
+            System.out.println("input file: " + file.toString());
             // 윈도우 inputfile 경로를 wsl 경로 형식으로 변환
             String windowsPath = file.toString();
             String wslPath = windowsPath.replace("\\", "/").replace("C:", "/mnt/c");
+            System.out.println("리눅스 형태로 변환: " + wslPath);
 
             // cp 명령어 - wsl 경로 형식으로 바꾼 윈도우 파일을 우분투 디렉토리로 복사
-            Process copyWslPathProcess = new ProcessBuilder("cp", wslPath, "/home/user/MUSIC/").start();
+            Process copyWslPathProcess = new ProcessBuilder("wsl", "cp", wslPath, "/home/user/").start();
             try {
                 int copyExitCode = copyWslPathProcess.waitFor();
                 if (copyExitCode != 0) {
@@ -64,7 +63,7 @@ public class MutationService {
         // -rs -re 값 설정
         String defaultStartFilename = modelFiles.get(0).getFileName().toString(); // -rs filename의 default는 첫번째 .c 파일
         String defaultEndFilename = modelFiles.get(modelFiles.size() - 1).getFileName().toString(); // -re filename의 default는 마지막 .c 파일
-        String startMutantFilename = startFilename != null ? startFilename + ":" + startLine : defaultStartFilename + ":0"; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
+        String startMutantFilename = startFilename != null ? startFilename + ":" + startLine : defaultStartFilename + ":1"; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
         int endMutantLine = endLine != 0 ? endLine : (int) Files.lines(modelFiles.get(modelFiles.size() - 1)).count();
         String endMutantFilename = endFilename != null ? endFilename + ":" + endMutantLine : defaultEndFilename + ":" + endMutantLine; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
 
@@ -76,6 +75,7 @@ public class MutationService {
 
         // STEP 4: MUSIC 명령어 실행
         List<String> commands = new ArrayList<>();
+        commands.add("wsl");
         commands.add("/home/user/MUSIC/music");
         commands.add(inputfilenames);
         if (compileDatabasePath != null) { // 사용자로부터 compilation database file 경로를 받았으면 -p 옵션 추가
@@ -85,19 +85,26 @@ public class MutationService {
             commands.add("-p --");
         }
         if (outputDirectory != null) {
-            commands.add("-o " + wslOutputDirectory); // output directory 절대 경로. 윈도우 디렉토리에 저장됨.
+            commands.add("-o");
+            commands.add(wslOutputDirectory); // output directory 절대 경로. 윈도우 디렉토리에 저장됨.
         } else { // 사용자로부터 ouputDirectory 경로를 받지 않았으면 사용자의 현재 디렉토리를 outputDiretory로 설정
-            commands.add("-o " + wslCurrentDirectory);
+            commands.add("-o");
+            commands.add(wslCurrentDirectory);
         }
         if (maxMutants > 0) {
-            commands.add("-l " + String.valueOf(maxMutants)); // mutants 최대 생성 개수
+            commands.add("-l");
+            commands.add(String.valueOf(maxMutants)); // mutants 최대 생성 개수
         }
-        commands.add("-rs " + startMutantFilename); // mutant 생성 시작 file, line. null이면 default로 첫 번째 c파일의 첫 번째줄
-        commands.add("-re " + endMutantFilename); // mutant 생성 끝 file, line. null이면 defaulat로 마지막 c파일의 마지막줄
+        commands.add("-rs");
+        commands.add(startMutantFilename); // mutant 생성 시작 file, line. null이면 default로 첫 번째 c파일의 첫 번째줄
+        commands.add("-re");
+        commands.add(endMutantFilename); // mutant 생성 끝 file, line. null이면 defaulat로 마지막 c파일의 마지막줄
         if (notMutatedLine > 0) {
-            commands.add("-x " + String.valueOf(notMutatedLine)); // mutant 생성 제외할 lines
+            commands.add("-x");
+            commands.add(String.valueOf(notMutatedLine)); // mutant 생성 제외할 lines
         }
-        commands.add("-m " + mutantOperator); // 변이 연산자
+        commands.add("-m");
+        commands.add(mutantOperator); // 변이 연산자
 
         ProcessBuilder musicProcessBuilder = new ProcessBuilder(commands);
         musicProcessBuilder.directory(Paths.get(folderPath).getParent().toFile()); // #include와 같은 상대 경로가 포함된 경우, MUSIC이 폴더 구조를 유지하면서 올바르게 실행되도록
