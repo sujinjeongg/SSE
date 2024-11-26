@@ -76,11 +76,11 @@ function CreateProject() {
             outputDirectory: selectedOption.includes("-o") ? outputDirectory : null,
             maxMutants: selectedOption.includes("-l") ? maxMutants : 0,
             startFilename: selectedOption.includes("-rs") ? startFilename : null,
-            startLine: startLine>0 ? startLine : 0,
+            startLine: startLine>0 ? startLine : 1,
             endFilename: selectedOption.includes("-re") ? endFilename : null,
             endLine: endLine!=0 ? endLine : 0,
             notMutatedLine: selectedOption.includes("-x") ? notMutatedLine : -1,
-            mutantOperator: selectedOperator.join(","),
+            mutantOperator: selectedOption.includes("-m") && selectedOperator != null ? selectedOperator.join(" ") : null,
         };
 
         try {

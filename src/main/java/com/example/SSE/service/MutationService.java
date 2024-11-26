@@ -60,10 +60,11 @@ public class MutationService {
         // STEP 3: inputfilename1 inputfilename2... 파일 이름 리스트 생성
         String inputfilenames = modelFiles.stream().map(file -> file.getFileName().toString()).collect(Collectors.joining(" "));
 
-        // -rs -re 값 설정
+        // -rs -re 파라미터 설정
         String defaultStartFilename = modelFiles.get(0).getFileName().toString(); // -rs filename의 default는 첫번째 .c 파일
         String defaultEndFilename = modelFiles.get(modelFiles.size() - 1).getFileName().toString(); // -re filename의 default는 마지막 .c 파일
-        String startMutantFilename = startFilename != null ? startFilename + ":" + startLine : defaultStartFilename + ":1"; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
+        int startMutantLine = startLine != 0 ? startLine : 1;
+        String startMutantFilename = startFilename != null ? startFilename + ":" + startMutantLine : defaultStartFilename + ":" + startMutantLine; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
         int endMutantLine = endLine != 0 ? endLine : (int) Files.lines(modelFiles.get(modelFiles.size() - 1)).count();
         String endMutantFilename = endFilename != null ? endFilename + ":" + endMutantLine : defaultEndFilename + ":" + endMutantLine; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
 
@@ -81,8 +82,6 @@ public class MutationService {
         if (compileDatabasePath != null) { // 사용자로부터 compilation database file 경로를 받았으면 -p 옵션 추가
             commands.add("-p");
             commands.add(compileDatabasePath.toString());
-        } else { // 사용자로부터 compilation database file 경로를 받지 않았으면 없는 상태로 실행
-            commands.add("-p --");
         }
         if (outputDirectory != null) {
             commands.add("-o");
@@ -95,16 +94,23 @@ public class MutationService {
             commands.add("-l");
             commands.add(String.valueOf(maxMutants)); // mutants 최대 생성 개수
         }
-        commands.add("-rs");
-        commands.add(startMutantFilename); // mutant 생성 시작 file, line. null이면 default로 첫 번째 c파일의 첫 번째줄
-        commands.add("-re");
-        commands.add(endMutantFilename); // mutant 생성 끝 file, line. null이면 defaulat로 마지막 c파일의 마지막줄
+        if (startFilename != null) {
+            commands.add("-rs");
+            commands.add(startMutantFilename); // mutant 생성 시작 file, line. null이면 default로 첫 번째 c파일의 첫 번째줄
+        }
+        if (endFilename != null) {
+            commands.add("-re");
+            commands.add(endMutantFilename); // mutant 생성 끝 file, line. null이면 defaulat로 마지막 c파일의 마지막줄
+        }
         if (notMutatedLine > 0) {
             commands.add("-x");
             commands.add(String.valueOf(notMutatedLine)); // mutant 생성 제외할 lines
         }
-        commands.add("-m");
-        commands.add(mutantOperator); // 변이 연산자
+        if (mutantOperator != null) {
+            commands.add("-m");
+            commands.add(mutantOperator); // 변이 연산자
+        }
+        System.out.println(commands);
 
         ProcessBuilder musicProcessBuilder = new ProcessBuilder(commands);
         musicProcessBuilder.directory(Paths.get(folderPath).getParent().toFile()); // #include와 같은 상대 경로가 포함된 경우, MUSIC이 폴더 구조를 유지하면서 올바르게 실행되도록
