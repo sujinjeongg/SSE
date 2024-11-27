@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,9 +60,6 @@ public class MutationService {
             }
         }
 
-        // STEP 3: inputfilename1 inputfilename2... 파일 이름 리스트 생성
-        String inputfilenames = modelFiles.stream().map(file -> file.getFileName().toString()).collect(Collectors.joining(" "));
-
         // -rs -re 파라미터 설정
         String defaultStartFilename = modelFiles.get(0).getFileName().toString(); // -rs filename의 default는 첫번째 .c 파일
         String defaultEndFilename = modelFiles.get(modelFiles.size() - 1).getFileName().toString(); // -re filename의 default는 마지막 .c 파일
@@ -74,11 +74,16 @@ public class MutationService {
         String windowsCurrentDirectory = System.getProperty("user.dir"); // 사용자의 현재 디렉토리를 가져옴
         String wslCurrentDirectory = windowsCurrentDirectory.replace("\\", "/").replace("C:", "/mnt/c");
 
-        // STEP 4: MUSIC 명령어 실행
+        // STEP 3: MUSIC 명령어 실행
         List<String> commands = new ArrayList<>();
         commands.add("wsl");
+        commands.add("--cd");
+        commands.add("/home/user"); // WSL에서 시작할 디렉토리 지정
         commands.add("/home/user/MUSIC/music");
-        commands.add(inputfilenames);
+        modelFiles.forEach(file -> { // inputfilename1 inputfilename2... 파일 이름들
+            String inputfilename = file.getFileName().toString();
+            commands.add(inputfilename);
+        });
         if (compileDatabasePath != null) { // 사용자로부터 compilation database file 경로를 받았으면 -p 옵션 추가
             commands.add("-p");
             commands.add(compileDatabasePath.toString());
@@ -110,22 +115,36 @@ public class MutationService {
             commands.add("-m");
             commands.add(mutantOperator); // 변이 연산자
         }
-        System.out.println(commands);
+        System.out.println("Generated commands: " + String.join(" ", commands));
 
         ProcessBuilder musicProcessBuilder = new ProcessBuilder(commands);
-        musicProcessBuilder.directory(Paths.get(folderPath).getParent().toFile()); // #include와 같은 상대 경로가 포함된 경우, MUSIC이 폴더 구조를 유지하면서 올바르게 실행되도록
+        musicProcessBuilder.redirectErrorStream(true); // stderr와 stdout 통합
 
         // 프로세스 실행 및 출력 로그 출력
         Process musicProcess = musicProcessBuilder.start();
-        StringBuilder outputLog = new StringBuilder();
-        try (BufferedReader outputReader = new BufferedReader(new InputStreamReader(musicProcess.getInputStream()))) {
-            String line;
-            while ((line = outputReader.readLine()) != null) {
-                outputLog.append(line).append("\n");
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        executor.submit(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(musicProcess.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("STDOUT: " + line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
-            System.out.println("MUSIC process output:\n" + outputLog);
-        }
+        });
+        executor.submit(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(musicProcess.getErrorStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.err.println("STDERR: " + line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.MINUTES);
 
         // (임시) Process 실행 결과 검사 추가 , Output 디렉토리 검사
         int exitCode = musicProcess.waitFor();

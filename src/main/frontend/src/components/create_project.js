@@ -80,7 +80,7 @@ function CreateProject() {
             endFilename: selectedOption.includes("-re") ? endFilename : null,
             endLine: endLine!=0 ? endLine : 0,
             notMutatedLine: selectedOption.includes("-x") ? notMutatedLine : -1,
-            mutantOperator: selectedOption.includes("-m") && selectedOperator != null ? selectedOperator.join(" ") : null,
+            mutantOperator: selectedOperator.length>0 ? selectedOperator.join(' ') : null,
         };
 
         try {
@@ -238,13 +238,13 @@ function CreateProject() {
             <div className="container-fluid" style={{position: 'absolute', left: '1150px', top: '330px'}}>
                 <label>Select operators:</label>
                 <select multiple={true} value={selectedOperator}>
-                    {['ocor', 'olbn', 'osaa', 'orrn', 'vlpr'].map((option) => (
+                    {['OCOR', 'OLBN', 'OSAA', 'ORRN', 'VLPR'].map((operator) => (
                         <option
-                            key={option}
-                            value={option}
+                            key={operator}
+                            value={operator}
                             onClick={(e) => handleOperatorChange(e)}
                         >
-                            {option}
+                            {operator}
                         </option>
                     ))}
                 </select>
