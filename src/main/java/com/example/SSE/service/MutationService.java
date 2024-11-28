@@ -161,7 +161,8 @@ public class MutationService {
 
         // 변이된 파일 이름들, 코드 반환
         List<Map<String, String>> outputFilesList = new ArrayList<>();
-        try (Stream<Path> outputFiles = Files.list(outputDirectory)) {
+        String resultOutputDirectory = (outputDirectory != null) ? outputDirectory.toString() : System.getProperty("user.home") + "\\Downloads\\mutationDirectory";;
+        try (Stream<Path> outputFiles = Files.list(Paths.get(resultOutputDirectory))) {
             outputFiles.filter(p -> p.getFileName().toString().endsWith(".c"))
                     .forEach(p -> {
                         Map<String, String> fileInfo = new HashMap<>();
