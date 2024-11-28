@@ -3,6 +3,7 @@ package com.example.SSE.service;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -69,10 +70,21 @@ public class MutationService {
         String endMutantFilename = endFilename != null ? endFilename + ":" + endMutantLine : defaultEndFilename + ":" + endMutantLine; // 사용자가 입력하는 값이 있다면 그 값 사용. 없다면 default값 사용.
 
         // 윈도우 outputDirectory 경로를 wsl 경로 형식으로 변환
-        String windowsOutputDirectory = outputDirectory.toString();
-        String wslOutputDirectory = windowsOutputDirectory.replace("\\", "/").replace("C:", "/mnt/c");
-        String windowsCurrentDirectory = System.getProperty("user.dir"); // 사용자의 현재 디렉토리를 가져옴
-        String wslCurrentDirectory = windowsCurrentDirectory.replace("\\", "/").replace("C:", "/mnt/c");
+        String wslOutputDirectory;
+        if (outputDirectory != null) { // 사용자로부터 outputDirectory를 입력 받은 경우
+            String windowsOutputDirectory = outputDirectory.toString();
+            wslOutputDirectory = windowsOutputDirectory.replace("\\", "/").replace("C:", "/mnt/c");
+        } else { // 사용자로부터 outputDirectory를 입력 받지 않은 경우
+            String windowsDownloadsDirectory = System.getProperty("user.home") + "\\Downloads"; // 사용자의 다운로드 디렉토리를 가져옴
+            String windowsMutationDirectory = windowsDownloadsDirectory + "\\mutationDirectory"; // 다운로드 디렉토리 내 mutationDirectory
+            File mutationDirectory = new File(windowsMutationDirectory); // mutationDirectory 디렉토리 생성
+            if (mutationDirectory.mkdir()) {
+                System.out.println("mutationDirectory가 생성되었습니다: " + windowsMutationDirectory);
+            } else {
+                System.err.println("mutationDirectory를 생성하는데 실패했습니다.");
+            }
+            wslOutputDirectory = windowsMutationDirectory.replace("\\", "/").replace("C:", "/mnt/c");
+        }
 
         // STEP 3: MUSIC 명령어 실행
         List<String> commands = new ArrayList<>();
@@ -88,13 +100,8 @@ public class MutationService {
             commands.add("-p");
             commands.add(compileDatabasePath.toString());
         }
-        if (outputDirectory != null) {
-            commands.add("-o");
-            commands.add(wslOutputDirectory); // output directory 절대 경로. 윈도우 디렉토리에 저장됨.
-        } else { // 사용자로부터 ouputDirectory 경로를 받지 않았으면 사용자의 현재 디렉토리를 outputDiretory로 설정
-            commands.add("-o");
-            commands.add(wslCurrentDirectory);
-        }
+        commands.add("-o");
+        commands.add(wslOutputDirectory);
         if (maxMutants > 0) {
             commands.add("-l");
             commands.add(String.valueOf(maxMutants)); // mutants 최대 생성 개수
@@ -146,13 +153,10 @@ public class MutationService {
         executor.shutdown();
         executor.awaitTermination(1, TimeUnit.MINUTES);
 
-        // (임시) Process 실행 결과 검사 추가 , Output 디렉토리 검사
+        // (임시) Process 실행 결과 검사 추가
         int exitCode = musicProcess.waitFor();
         if (exitCode != 0) {
             throw new IOException("MUSIC process failed with exit code " + exitCode);
-        }
-        if (outputDirectory == null || !Files.exists(outputDirectory)) {
-            throw new IllegalArgumentException("Invalid output directory: " + outputDirectory);
         }
 
         // 변이된 파일 이름들, 코드 반환
