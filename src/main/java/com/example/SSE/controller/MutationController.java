@@ -6,8 +6,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -50,4 +52,16 @@ public class MutationController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Mutation failed.");
         }
     }
+
+    @GetMapping("/output-files")
+    public List<Map<String, String>> getOutputFiles(
+            @RequestParam(required = false) String resultDirectory) throws IOException {
+        // 결과 디렉토리를 지정하지 않은 경우 기본 디렉토리로 설정
+        String outputDirectory = resultDirectory != null
+                ? resultDirectory
+                : System.getProperty("user.home") + "\\Downloads\\mutationDirectory";
+
+        return mutationService.getOutputFiles(outputDirectory);
+    }
+
 }

@@ -84,20 +84,16 @@ function CreateProject() {
         };
 
         try {
-            const response = await axios.post("https://localhost:8082/api/mutation/apply", requestData, {
-                headers: { "Content-Type": "application/json" },});console.log('Success:', response.data);
-            navigate("/result", {
-                state: {
-                    outputLog: response.data.outputLog, // 출력 로그가 저장된 필드
-                    outputFiles: response.data.outputFiles || [], // 파일 이름들, 코드 내용이 저장된 필드
-                },
+            await axios.post("https://localhost:8082/api/mutation/apply", requestData, {
+                headers: { "Content-Type": "application/json" },
             });
+
+            // 성공하면 결과 페이지로 이동
+            navigate("/result");
         } catch (error) {
-            console.error("변이 생성 실패:", error);
-            navigate("/result", {
-                state: { Error: error.response?.data || error.message },
-            });
+            console.error("Error applying mutation:", error);
         }
+
     };
 
     return (

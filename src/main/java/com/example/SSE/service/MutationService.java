@@ -159,9 +159,12 @@ public class MutationService {
             throw new IOException("MUSIC process failed with exit code " + exitCode);
         }
 
-        // 변이된 파일 이름들, 코드 반환
+        return getOutputFiles(outputDirectory != null ? outputDirectory.toString() : System.getProperty("user.home") + "\\Downloads\\mutationDirectory");
+    }
+
+    // 변이된 파일 이름들, 코드 반환
+    public List<Map<String, String>> getOutputFiles(String resultOutputDirectory) throws IOException {
         List<Map<String, String>> outputFilesList = new ArrayList<>();
-        String resultOutputDirectory = (outputDirectory != null) ? outputDirectory.toString() : System.getProperty("user.home") + "\\Downloads\\mutationDirectory";;
         try (Stream<Path> outputFiles = Files.list(Paths.get(resultOutputDirectory))) {
             outputFiles.filter(p -> p.getFileName().toString().endsWith(".c"))
                     .forEach(p -> {
@@ -175,7 +178,10 @@ public class MutationService {
                         outputFilesList.add(fileInfo);
                     });
         }
+
+        System.out.println(outputFilesList);
         return outputFilesList;
     }
+
 }
 

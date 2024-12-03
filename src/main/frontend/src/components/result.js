@@ -1,179 +1,65 @@
-import React, {useEffect, useState} from "react";
-import { useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-function Result() {
-    const location = useLocation();
-
-    const [outputFiles, setOutputFiles] = useState([]);
-    const [selectedFile, setSelectedFile] = useState(null);
+const Result = () => {
+    const [files, setFiles] = useState([]); // 변이된 파일 목록
+    const [selectedFile, setSelectedFile] = useState(null); // 선택된 파일 정보
 
     useEffect(() => {
-        if (location.state && location.state.outputFiles) {
-            setOutputFiles(location.state.outputFiles);
-            setSelectedFile(location.state.outputFiles[0]);
-        }
-    }, [location.state]);
+        // 서버에서 변이된 파일 목록 가져오기
+        const fetchFiles = async () => {
+            try {
+                const response = await axios.get("https://localhost:8082/api/mutation/output-files");
+                setFiles(response.data);
+            } catch (error) {
+                console.error("Error fetching files:", error);
+            }
+        };
 
-    const handleFileSelect = (file) => {
-        setSelectedFile(file);
+        fetchFiles();
+    }, []);
+
+    const handleFileClick = (file) => {
+        setSelectedFile(file); // 클릭한 파일의 정보를 상태로 설정
     };
 
     return (
-        <div style={styles.container}>
-            {/* 헤더 */}
-            <div style={styles.header}>
-                <div>
-                    <h3 style={styles.title}>Create New Project</h3>
-                </div>
-                <div>
-                    <i className="bi bi-house-fill" style={styles.icon}></i>
-                    <i className="bi bi-person-circle" style={styles.icon}></i>
-                    <i className="bi bi-gear" style={styles.icon}></i>
-                </div>
+        <div style={{ display: "flex", height: "100vh" }}>
+            {/* 사이드바 */}
+            <div style={{ width: "20%", backgroundColor: "#f0f0f0", padding: "10px" }}>
+                <h3>Files</h3>
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                    {files.map((file, index) => (
+                        <li
+                            key={index}
+                            onClick={() => handleFileClick(file)}
+                            style={{
+                                padding: "10px",
+                                cursor: "pointer",
+                                backgroundColor: selectedFile?.name === file.name ? "#e0e0e0" : "transparent",
+                            }}
+                        >
+                            {file.name}
+                        </li>
+                    ))}
+                </ul>
             </div>
 
-            {/* 콘텐츠 */}
-            <div style={styles.content}>
-                {/* 사이드바 */}
-                <div style={styles.sidebar}>
-                    <h3>Files</h3>
-                    {outputFiles.length>0 ? (
-                        outputFiles.map((file) => (
-                            <div
-                                key={file.name}
-                                style={{
-                                    ...styles.fileItem,
-                                    backgroundColor:
-                                        selectedFile.name === file.name
-                                            ? "#d3d3d3"
-                                            : "transparent",
-                                }}
-                                onClick={() => handleFileSelect(file)}
-                            >
-                                {file.name}
-                            </div>
-                        ))
-                    ) : ( <p>No files available.</p> )}
-                </div>
-
-                {/* 메인 콘텐츠 */}
-                <div style={styles.mainContent}>
-                    {selectedFile ? (
-                        <div style={styles.card}>
-                            <div style={styles.cardHeader}>
-                                {selectedFile.name}
-                            </div>
-                            <div>
-                            <pre
-                                style={{
-                                    backgroundColor: "#f8f9fa",
-                                    padding: "10px",
-                                    height: "400px",
-                                    overflowY: "scroll",
-                                }}
-                            >
-                                <code> {selectedFile.content} </code>
-                            </pre>
-                                <button
-                                    style={{ ...styles.button, ...styles.primaryButton }}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    style={{ ...styles.button, ...styles.secondaryButton }}
-                                >
-                                    Log Record
-                                </button>
-                                <button
-                                    style={{ ...styles.button, ...styles.primaryButton }}
-                                >
-                                    Download
-                                </button>
-                            </div>
-                        </div>
-                        ) : ( <p>Please select a file to view</p> )}
-                        </div>
+            {/* 파일 내용 표시 */}
+            <div style={{ flex: 1, padding: "20px" }}>
+                {selectedFile ? (
+                    <div>
+                        <h2>{selectedFile.name}</h2>
+                        <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {selectedFile.content}
+            </pre>
+                    </div>
+                ) : (
+                    <p>Select a file to view its content</p>
+                )}
             </div>
         </div>
     );
-}
-
-const styles = {
-    container: {
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        fontFamily: "Arial, sans-serif",
-    },
-    header: {
-        backgroundColor: "#000",
-        color: "white",
-        padding: "35px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-    },
-    icon: {
-        fontSize: "2rem",
-        margin: "0 15px",
-        cursor: "pointer",
-    },
-    title: {
-        margin: "30px 0 0 0",
-        fontSize: "1.5rem",
-        fontWeight: "bold",
-    },
-    content: {
-        display: "flex",
-        flex: 1,
-        overflow: "hidden",
-    },
-    sidebar: {
-        width: "20%",
-        backgroundColor: "#f8f9fa",
-        padding: "20px",
-        boxShadow: "2px 0 5px rgba(0, 0, 0, 0.1)",
-        overflowY: "auto",
-    },
-    fileItem: {
-        padding: "10px 15px",
-        margin: "5px 0",
-        borderRadius: "5px",
-        cursor: "pointer",
-    },
-    mainContent: {
-        flex: 1,
-        padding: "20px",
-        backgroundColor: "#fff",
-        overflowY: "auto",
-    },
-    card: {
-        border: "1px solid #ddd",
-        borderRadius: "5px",
-        padding: "15px",
-        marginBottom: "20px",
-    },
-    cardHeader: {
-        fontWeight: "bold",
-        borderBottom: "1px solid #ddd",
-        paddingBottom: "10px",
-        marginBottom: "10px",
-    },
-    button: {
-        marginRight: "10px",
-        padding: "8px 15px",
-        border: "none",
-        borderRadius: "5px",
-        cursor: "pointer",
-    },
-    primaryButton: {
-        backgroundColor: "#007bff",
-        color: "#fff",
-    },
-    secondaryButton: {
-        backgroundColor: "#6c757d",
-        color: "#fff",
-    },
 };
 
 export default Result;
