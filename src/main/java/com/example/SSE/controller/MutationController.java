@@ -29,7 +29,7 @@ public class MutationController {
             String folderPath = (String) requestData.get("folderPath");
             Path compilePath = requestData.get("compilePath") != null ? Paths.get((String) requestData.get("compilePath")) : null;
             Path outputDirectory = requestData.get("outputDirectory") != null ? Paths.get((String) requestData.get("outputDirectory")) : null;
-            int maxMutants = requestData.get("maxMutants") != null ? (int) requestData.get("maxMutants") : 0;
+            String maxMutants = requestData.get("maxMutants") != null ? (String) requestData.get("maxMutants") : null;
             String startFilename = (String) requestData.get("startFilename");
             int startLine = requestData.get("startLine") != null ? (int) requestData.get("startLine") : 0;
             String endFilename = (String) requestData.get("endFilename");

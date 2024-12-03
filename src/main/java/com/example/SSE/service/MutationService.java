@@ -35,7 +35,7 @@ public class MutationService {
         }
     }
 
-    public List<Map<String, String>> applyMutation(String folderPath, Path compileDatabasePath, Path outputDirectory, int maxMutants, String startFilename, int startLine, String endFilename, int endLine, int notMutatedLine, String mutantOperator) throws IOException, InterruptedException {
+    public List<Map<String, String>> applyMutation(String folderPath, Path compileDatabasePath, Path outputDirectory, String maxMutants, String startFilename, int startLine, String endFilename, int endLine, int notMutatedLine, String mutantOperator) throws IOException, InterruptedException {
 
         // STEP 1: 폴더에서 .c파일들 찾기
         List<Path> modelFiles = findModelFiles(folderPath);
@@ -102,9 +102,9 @@ public class MutationService {
         }
         commands.add("-o");
         commands.add(wslOutputDirectory);
-        if (maxMutants > 0) {
+        if (maxMutants != null) {
             commands.add("-l");
-            commands.add(String.valueOf(maxMutants)); // mutants 최대 생성 개수
+            commands.add((maxMutants)); // mutants 최대 생성 개수
         }
         if (startFilename != null) {
             commands.add("-rs");

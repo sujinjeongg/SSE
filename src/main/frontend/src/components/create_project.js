@@ -74,7 +74,7 @@ function CreateProject() {
             folderPath,
             compilePath: selectedOption.includes("-p") ? compileDatabasePath : null,
             outputDirectory: selectedOption.includes("-o") ? outputDirectory : null,
-            maxMutants: selectedOption.includes("-l") ? maxMutants : 0,
+            maxMutants: selectedOption.includes("-l") ? maxMutants : null,
             startFilename: selectedOption.includes("-rs") ? startFilename : null,
             startLine: startLine>0 ? startLine : 1,
             endFilename: selectedOption.includes("-re") ? endFilename : null,
